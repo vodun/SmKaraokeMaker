@@ -180,11 +180,14 @@ def _generate_ass(
         lines.append(f"Dialogue: 0,{ass_start},{ass_end},{active_style},,0,0,0,,{karaoke_text}")
 
         # Превью следующего сегмента на другой строке
+        # Не показываем превью, если до следующего сегмента большая пауза
         if next_segment:
-            preview_text = " ".join(w.text for w in next_segment.words)
-            lines.append(
-                f"Dialogue: 0,{ass_start},{ass_end},{preview_style},,0,0,0,,{preview_text}"
-            )
+            next_gap = next_segment.start - segment.end
+            if next_gap < COUNTDOWN_THRESHOLD:
+                preview_text = " ".join(w.text for w in next_segment.words)
+                lines.append(
+                    f"Dialogue: 0,{ass_start},{ass_end},{preview_style},,0,0,0,,{preview_text}"
+                )
 
         prev_end = segment.end
 

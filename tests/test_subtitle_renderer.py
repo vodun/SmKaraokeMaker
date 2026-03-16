@@ -152,6 +152,46 @@ class TestRenderSubtitles:
         preview_styles = [l.split(",")[3] for l in dialogue_lines if "\\kf" not in l]
         assert preview_styles == ["Line2", "Line1", "Line2"]
 
+    def test_no_preview_across_long_gap(self, tmp_path):
+        """Превью не показывается, если до следующего сегмента пауза >= 5 сек."""
+        segments = [
+            Segment(
+                text="Первая строка",
+                words=[Word(text="Первая", start=1.0, end=1.5),
+                       Word(text="строка", start=1.6, end=2.0)],
+                start=1.0, end=2.0,
+            ),
+            # Пауза 8 секунд
+            Segment(
+                text="После паузы",
+                words=[Word(text="После", start=10.0, end=10.5),
+                       Word(text="паузы", start=10.6, end=11.0)],
+                start=10.0, end=11.0,
+            ),
+        ]
+        config = KaraokeConfig(
+            input_video=Path("/fake/input.mp4"),
+            output_video=Path("/fake/output.mp4"),
+        )
+        ctx = PipelineContext(
+            input_video=config.input_video,
+            output_video=config.output_video,
+            temp_dir=tmp_path,
+            config=config,
+            transcript=segments,
+        )
+        result = render_subtitles(ctx)
+        content = result.subtitle_path.read_text()
+        dialogue_lines = [l for l in content.splitlines()
+                          if l.startswith("Dialogue:") and ",Countdown," not in l]
+        # seg0: active Line1, НЕТ превью (пауза 8 сек)
+        # seg1: active Line2
+        assert len(dialogue_lines) == 2
+        assert ",Line1," in dialogue_lines[0]
+        assert "\\kf" in dialogue_lines[0]
+        assert ",Line2," in dialogue_lines[1]
+        assert "\\kf" in dialogue_lines[1]
+
     def test_empty_transcript(self, tmp_path):
         config = KaraokeConfig(
             input_video=Path("/fake/input.mp4"),
