@@ -1,4 +1,4 @@
-"""Тесты для извлечения аудио."""
+"""Tests for audio extraction."""
 
 from pathlib import Path
 
@@ -31,7 +31,7 @@ class TestAudioExtractor:
         assert result.audio_path.exists()
         assert result.audio_path.suffix == ".wav"
 
-        # Проверяем метаданные
+        # Check metadata
         info = probe_media(result.audio_path)
         assert info["duration"] > 0
         assert info["has_audio"]
@@ -40,8 +40,8 @@ class TestAudioExtractor:
         ctx = _make_ctx(sample_video, tmp_path)
         result = extract_audio(ctx)
 
-        # Файл должен быть WAV приличного размера (PCM несжатый)
+        # File should be a decent-sized WAV (uncompressed PCM)
         assert result.audio_path is not None
         size = result.audio_path.stat().st_size
-        # 5 сек * 44100 * 2 каналов * 2 байт = ~882000 байт минимум
+        # 5 sec * 44100 * 2 channels * 2 bytes = ~882000 bytes minimum
         assert size > 500_000

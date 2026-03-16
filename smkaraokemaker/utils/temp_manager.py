@@ -1,4 +1,4 @@
-"""Управление временными файлами и кэшем."""
+"""Temporary file and cache management."""
 
 from __future__ import annotations
 
@@ -12,11 +12,11 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-HASH_CHUNK_SIZE = 64 * 1024 * 1024  # 64 МБ для быстрого хэширования
+HASH_CHUNK_SIZE = 64 * 1024 * 1024  # 64 MB for fast hashing
 
 
 class TempManager:
-    """Менеджер временных файлов пайплайна."""
+    """Pipeline temporary file manager."""
 
     def __init__(self, input_file: Path, keep_temp: bool = False) -> None:
         self.input_file = input_file
@@ -38,11 +38,11 @@ class TempManager:
             logger.debug("Cleaned up temp dir: %s", self.temp_dir)
 
     def get_path(self, name: str) -> Path:
-        """Получить путь к файлу во временной директории."""
+        """Get path to a file in the temporary directory."""
         return self.temp_dir / name
 
     def is_step_done(self, step_name: str) -> bool:
-        """Проверить, выполнен ли шаг (для кэширования)."""
+        """Check if a step is completed (for caching)."""
         if self._state.get("input_hash") != self.input_hash:
             return False
         step = self._state.get("steps", {}).get(step_name, {})
@@ -54,7 +54,7 @@ class TempManager:
         return True
 
     def mark_step_done(self, step_name: str, output: Path | None = None) -> None:
-        """Отметить шаг как выполненный."""
+        """Mark a step as completed."""
         self._state.setdefault("input_hash", self.input_hash)
         self._state.setdefault("steps", {})
         self._state["steps"][step_name] = {
@@ -76,11 +76,11 @@ class TempManager:
 
     @staticmethod
     def _hash_file(path: Path) -> str:
-        """SHA256 первых 64 МБ файла для быстрой идентификации."""
+        """SHA256 of the first 64 MB of the file for fast identification."""
         h = hashlib.sha256()
         with open(path, "rb") as f:
             data = f.read(HASH_CHUNK_SIZE)
             h.update(data)
-        # Добавляем размер файла для дополнительной уникальности
+        # Add file size for additional uniqueness
         h.update(str(path.stat().st_size).encode())
         return h.hexdigest()

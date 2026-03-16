@@ -1,4 +1,4 @@
-"""Обёртки над FFmpeg."""
+"""FFmpeg wrappers."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class FFmpegError(Exception):
-    """Ошибка выполнения FFmpeg."""
+    """FFmpeg execution error."""
 
 
 def run_ffmpeg(
@@ -21,12 +21,12 @@ def run_ffmpeg(
     verbose: bool = False,
     progress_callback: Any | None = None,
 ) -> None:
-    """Запустить FFmpeg с указанными аргументами.
+    """Run FFmpeg with the specified arguments.
 
     Args:
-        args: Аргументы для ffmpeg (без самого 'ffmpeg').
-        verbose: Выводить полный лог FFmpeg.
-        progress_callback: Вызывается с (current_seconds, total_seconds) для прогресса.
+        args: Arguments for ffmpeg (without 'ffmpeg' itself).
+        verbose: Print full FFmpeg log.
+        progress_callback: Called with (current_seconds, total_seconds) for progress.
     """
     cmd = ["ffmpeg", "-y", *args]
     logger.debug("FFmpeg command: %s", " ".join(cmd))
@@ -55,14 +55,14 @@ def run_ffmpeg(
     process.wait()
     if process.returncode != 0:
         error_text = "\n".join(stderr_output[-10:])
-        raise FFmpegError(f"FFmpeg завершился с кодом {process.returncode}:\n{error_text}")
+        raise FFmpegError(f"FFmpeg exited with code {process.returncode}:\n{error_text}")
 
 
 def probe_media(path: Path) -> dict:
-    """Получить метаданные медиафайла через ffprobe.
+    """Get media file metadata via ffprobe.
 
     Returns:
-        dict с ключами: duration (float), width (int), height (int),
+        dict with keys: duration (float), width (int), height (int),
         fps (float), has_audio (bool), has_video (bool).
     """
     cmd = [
@@ -76,9 +76,9 @@ def probe_media(path: Path) -> dict:
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:
-        raise FFmpegError(f"ffprobe не смог прочитать файл: {path}") from e
+        raise FFmpegError(f"ffprobe could not read file: {path}") from e
     except FileNotFoundError:
-        raise FFmpegError("ffprobe не найден. Установите: brew install ffmpeg")
+        raise FFmpegError("ffprobe not found. Install: brew install ffmpeg")
 
     data = json.loads(result.stdout)
 
@@ -99,7 +99,7 @@ def probe_media(path: Path) -> dict:
             info["has_video"] = True
             info["width"] = int(stream.get("width", 0))
             info["height"] = int(stream.get("height", 0))
-            # Парсинг fps из r_frame_rate (например "30000/1001")
+            # Parse fps from r_frame_rate (e.g. "30000/1001")
             r_fps = stream.get("r_frame_rate", "0/1")
             if "/" in r_fps:
                 num, den = r_fps.split("/")

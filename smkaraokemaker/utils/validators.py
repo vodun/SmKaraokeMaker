@@ -1,4 +1,4 @@
-"""Валидация входных данных."""
+"""Input data validation."""
 
 from __future__ import annotations
 
@@ -12,39 +12,39 @@ SUPPORTED_FORMATS = SUPPORTED_VIDEO_FORMATS | SUPPORTED_AUDIO_FORMATS
 
 
 def is_audio_only_format(path: Path) -> bool:
-    """Проверить, является ли файл аудиоформатом (без видео)."""
+    """Check if the file is an audio-only format (no video)."""
     return path.suffix.lower() in SUPPORTED_AUDIO_FORMATS
 
 
 class ValidationError(Exception):
-    """Ошибка валидации входных данных."""
+    """Input data validation error."""
 
 
 def validate_input_file(path: Path) -> None:
-    """Проверить, что входной файл существует и имеет поддерживаемый формат."""
+    """Check that the input file exists and has a supported format."""
     if not path.exists():
-        raise ValidationError(f"Файл не найден: {path}")
+        raise ValidationError(f"File not found: {path}")
     if not path.is_file():
-        raise ValidationError(f"Не является файлом: {path}")
+        raise ValidationError(f"Not a file: {path}")
     if path.suffix.lower() not in SUPPORTED_FORMATS:
         formats = ", ".join(sorted(SUPPORTED_FORMATS))
         raise ValidationError(
-            f"Неподдерживаемый формат '{path.suffix}'. "
-            f"Поддерживаемые видео: {', '.join(sorted(SUPPORTED_VIDEO_FORMATS))}; "
-            f"аудио: {', '.join(sorted(SUPPORTED_AUDIO_FORMATS))}"
+            f"Unsupported format '{path.suffix}'. "
+            f"Supported video: {', '.join(sorted(SUPPORTED_VIDEO_FORMATS))}; "
+            f"audio: {', '.join(sorted(SUPPORTED_AUDIO_FORMATS))}"
         )
 
 
 def validate_ffmpeg_available() -> None:
-    """Проверить, что FFmpeg установлен и доступен в PATH."""
+    """Check that FFmpeg is installed and available in PATH."""
     if shutil.which("ffmpeg") is None:
         raise ValidationError(
-            "FFmpeg не найден. Установите: brew install ffmpeg"
+            "FFmpeg not found. Install: brew install ffmpeg"
         )
 
 
 def validate_disk_space(path: Path, required_gb: float = 2.0) -> None:
-    """Проверить наличие свободного места на диске."""
+    """Check for sufficient free disk space."""
     target = path if path.is_dir() else path.parent
     if not target.exists():
         target = Path.home()
@@ -52,6 +52,6 @@ def validate_disk_space(path: Path, required_gb: float = 2.0) -> None:
     free_gb = stat.free / (1024 ** 3)
     if free_gb < required_gb:
         raise ValidationError(
-            f"Недостаточно места на диске: {free_gb:.1f} ГБ свободно, "
-            f"требуется минимум {required_gb:.1f} ГБ"
+            f"Not enough disk space: {free_gb:.1f} GB free, "
+            f"minimum {required_gb:.1f} GB required"
         )

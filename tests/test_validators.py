@@ -1,4 +1,4 @@
-"""Тесты для валидаторов."""
+"""Tests for validators."""
 
 import pytest
 from pathlib import Path
@@ -14,23 +14,23 @@ from smkaraokemaker.utils.validators import (
 
 class TestValidateInputFile:
     def test_nonexistent_file(self, tmp_path):
-        with pytest.raises(ValidationError, match="Файл не найден"):
+        with pytest.raises(ValidationError, match="File not found"):
             validate_input_file(tmp_path / "nope.mp4")
 
     def test_directory_instead_of_file(self, tmp_path):
-        with pytest.raises(ValidationError, match="Не является файлом"):
+        with pytest.raises(ValidationError, match="Not a file"):
             validate_input_file(tmp_path)
 
     def test_unsupported_format(self, tmp_path):
         f = tmp_path / "data.xyz"
         f.write_bytes(b"fake")
-        with pytest.raises(ValidationError, match="Неподдерживаемый формат"):
+        with pytest.raises(ValidationError, match="Unsupported format"):
             validate_input_file(f)
 
     def test_valid_mp4(self, tmp_path):
         f = tmp_path / "video.mp4"
         f.write_bytes(b"fake mp4")
-        validate_input_file(f)  # не должен бросать исключение
+        validate_input_file(f)  # should not raise
 
     def test_valid_mkv(self, tmp_path):
         f = tmp_path / "video.mkv"
@@ -75,7 +75,7 @@ class TestIsAudioOnlyFormat:
 class TestValidateFFmpeg:
     def test_ffmpeg_missing(self, monkeypatch):
         monkeypatch.setattr("shutil.which", lambda _: None)
-        with pytest.raises(ValidationError, match="FFmpeg не найден"):
+        with pytest.raises(ValidationError, match="FFmpeg not found"):
             validate_ffmpeg_available()
 
 
@@ -84,5 +84,5 @@ class TestValidateDiskSpace:
         validate_disk_space(tmp_path, required_gb=0.001)
 
     def test_not_enough_space(self, tmp_path):
-        with pytest.raises(ValidationError, match="Недостаточно места"):
+        with pytest.raises(ValidationError, match="Not enough disk space"):
             validate_disk_space(tmp_path, required_gb=999999)

@@ -1,4 +1,4 @@
-"""Базовые модели данных SMKaraokeMaker."""
+"""Base data models for SMKaraokeMaker."""
 
 from __future__ import annotations
 
@@ -8,16 +8,16 @@ from pydantic import BaseModel, Field
 
 
 class Word(BaseModel):
-    """Одно слово с таймингами."""
+    """A single word with timing information."""
 
     text: str
-    start: float  # секунды
-    end: float  # секунды
+    start: float  # seconds
+    end: float  # seconds
     confidence: float = 1.0
 
 
 class Segment(BaseModel):
-    """Строка текста (группа слов) с общим таймингом."""
+    """A text line (group of words) with common timing."""
 
     text: str
     words: list[Word]
@@ -26,7 +26,7 @@ class Segment(BaseModel):
 
 
 class SubtitleStyle(BaseModel):
-    """Параметры стиля караоке-субтитров."""
+    """Karaoke subtitle style parameters."""
 
     font_path: Path
     font_size: int = 64

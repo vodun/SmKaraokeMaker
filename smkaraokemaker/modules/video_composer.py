@@ -1,4 +1,4 @@
-"""Финальная сборка караоке-видео."""
+"""Final karaoke video assembly."""
 
 from __future__ import annotations
 
@@ -11,14 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 def compose_video(ctx: PipelineContext) -> PipelineContext:
-    """Собрать финальное видео: оригинал + инструментал + субтитры."""
+    """Assemble final video: original + instrumental + subtitles."""
     if ctx.instrumental_path is None:
-        raise RuntimeError("Инструментал не найден. Сначала выполните сепарацию.")
+        raise RuntimeError("Instrumental not found. Run vocal separation first.")
 
     quality = ctx.config.quality
 
     if ctx.has_video:
-        # Видео на входе: берём видеопоток из оригинала
+        # Video input: take video stream from original
         args = [
             "-i", str(ctx.input_video),
             "-i", str(ctx.instrumental_path),
@@ -32,7 +32,7 @@ def compose_video(ctx: PipelineContext) -> PipelineContext:
             "-map", "1:a",
         ])
     else:
-        # Аудио на входе: генерируем чёрный фон
+        # Audio input: generate black background
         resolution = ctx.config.resolution
         args = [
             "-f", "lavfi",
@@ -60,16 +60,16 @@ def compose_video(ctx: PipelineContext) -> PipelineContext:
     ])
 
     logger.info(
-        "Сборка видео: quality=%s (preset=%s, crf=%d)",
+        "Video assembly: quality=%s (preset=%s, crf=%d)",
         quality.value, quality.preset, quality.crf,
     )
 
     run_ffmpeg(args, verbose=ctx.config.verbose)
 
     if not ctx.output_video.exists():
-        raise FFmpegError("FFmpeg не создал выходной видеофайл")
+        raise FFmpegError("FFmpeg did not create the output video file")
 
     size_mb = ctx.output_video.stat().st_size / (1024 * 1024)
-    logger.info("Выходной файл: %s (%.1f МБ)", ctx.output_video, size_mb)
+    logger.info("Output file: %s (%.1f MB)", ctx.output_video, size_mb)
 
     return ctx

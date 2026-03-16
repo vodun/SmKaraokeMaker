@@ -1,4 +1,4 @@
-"""Тесты для генерации ASS-субтитров."""
+"""Tests for ASS subtitle generation."""
 
 from pathlib import Path
 
@@ -14,23 +14,23 @@ from smkaraokemaker.modules.subtitle_renderer import (
 def _make_segments() -> list[Segment]:
     return [
         Segment(
-            text="Я помню чудное мгновенье",
+            text="I remember a wonderful moment",
             words=[
-                Word(text="Я", start=1.0, end=1.2),
-                Word(text="помню", start=1.3, end=1.7),
-                Word(text="чудное", start=1.8, end=2.3),
-                Word(text="мгновенье", start=2.4, end=3.2),
+                Word(text="I", start=1.0, end=1.2),
+                Word(text="remember", start=1.3, end=1.7),
+                Word(text="a wonderful", start=1.8, end=2.3),
+                Word(text="moment", start=2.4, end=3.2),
             ],
             start=1.0,
             end=3.2,
         ),
         Segment(
-            text="Передо мной явилась ты",
+            text="Before me you appeared",
             words=[
-                Word(text="Передо", start=4.0, end=4.5),
-                Word(text="мной", start=4.6, end=4.9),
-                Word(text="явилась", start=5.0, end=5.6),
-                Word(text="ты", start=5.7, end=6.0),
+                Word(text="Before", start=4.0, end=4.5),
+                Word(text="me", start=4.6, end=4.9),
+                Word(text="you", start=5.0, end=5.6),
+                Word(text="appeared", start=5.7, end=6.0),
             ],
             start=4.0,
             end=6.0,
@@ -104,15 +104,15 @@ class TestRenderSubtitles:
         result = render_subtitles(ctx)
         content = result.subtitle_path.read_text()
         dialogue_lines = [l for l in content.splitlines() if l.startswith("Dialogue:")]
-        # 2 сегмента: seg0 → Line1 (active) + Line2 (preview), seg1 → Line2 (active)
+        # 2 segments: seg0 → Line1 (active) + Line2 (preview), seg1 → Line2 (active)
         assert len(dialogue_lines) == 3
-        # Проверяем чередование стилей
+        # Check style alternation
         assert ",Line1," in dialogue_lines[0]  # seg0 active
         assert ",Line2," in dialogue_lines[1]  # seg1 preview
         assert ",Line2," in dialogue_lines[2]  # seg1 active
 
     def test_alternating_lines(self, tmp_path):
-        """Проверка чередования строк: чётные на Line1, нечётные на Line2."""
+        """Check line alternation: even on Line1, odd on Line2."""
         segments = [
             Segment(
                 text=f"seg{i}",
@@ -137,35 +137,35 @@ class TestRenderSubtitles:
         content = result.subtitle_path.read_text()
         dialogue_lines = [l for l in content.splitlines() if l.startswith("Dialogue:")]
 
-        # 4 сегмента: каждый даёт active + preview (кроме последнего — только active)
+        # 4 segments: each gives active + preview (except the last — only active)
         # seg0: Line1 active + Line2 preview = 2
         # seg1: Line2 active + Line1 preview = 2
         # seg2: Line1 active + Line2 preview = 2
         # seg3: Line2 active = 1
         assert len(dialogue_lines) == 7
 
-        # Проверяем чередование: active стили
+        # Check alternation: active styles
         active_styles = [l.split(",")[3] for l in dialogue_lines if "\\kf" in l]
         assert active_styles == ["Line1", "Line2", "Line1", "Line2"]
 
-        # Проверяем preview стили
+        # Check preview styles
         preview_styles = [l.split(",")[3] for l in dialogue_lines if "\\kf" not in l]
         assert preview_styles == ["Line2", "Line1", "Line2"]
 
     def test_no_preview_across_long_gap(self, tmp_path):
-        """Превью не показывается, если до следующего сегмента пауза >= 5 сек."""
+        """Preview is not shown if the gap to the next segment is >= 5 sec."""
         segments = [
             Segment(
-                text="Первая строка",
-                words=[Word(text="Первая", start=1.0, end=1.5),
-                       Word(text="строка", start=1.6, end=2.0)],
+                text="First line",
+                words=[Word(text="First", start=1.0, end=1.5),
+                       Word(text="line", start=1.6, end=2.0)],
                 start=1.0, end=2.0,
             ),
-            # Пауза 8 секунд
+            # 8 second pause
             Segment(
-                text="После паузы",
-                words=[Word(text="После", start=10.0, end=10.5),
-                       Word(text="паузы", start=10.6, end=11.0)],
+                text="After pause",
+                words=[Word(text="After", start=10.0, end=10.5),
+                       Word(text="pause", start=10.6, end=11.0)],
                 start=10.0, end=11.0,
             ),
         ]
@@ -184,7 +184,7 @@ class TestRenderSubtitles:
         content = result.subtitle_path.read_text()
         dialogue_lines = [l for l in content.splitlines()
                           if l.startswith("Dialogue:") and ",Countdown," not in l]
-        # seg0: active Line1, НЕТ превью (пауза 8 сек)
+        # seg0: active Line1, NO preview (8 sec pause)
         # seg1: active Line2
         assert len(dialogue_lines) == 2
         assert ",Line1," in dialogue_lines[0]

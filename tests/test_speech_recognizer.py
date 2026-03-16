@@ -1,4 +1,4 @@
-"""Тесты для группировки слов (без ML-моделей)."""
+"""Tests for word grouping (no ML models)."""
 
 from smkaraokemaker.models import Word
 from smkaraokemaker.modules.speech_recognizer import _group_words_into_segments
@@ -19,7 +19,7 @@ class TestGroupWords:
         assert len(segments[0].words) == 1
 
     def test_split_by_pause(self):
-        # 3 слова, пауза, 3 слова
+        # 3 words, pause, 3 words
         words = _make_words([
             (0.0, 0.3), (0.35, 0.6), (0.65, 1.0),
             (2.0, 2.3), (2.35, 2.6), (2.65, 3.0),
@@ -30,7 +30,7 @@ class TestGroupWords:
         assert len(segments[1].words) == 3
 
     def test_split_by_max_words(self):
-        # 12 слов подряд без пауз → должно разбиться
+        # 12 words in a row without pauses — should be split
         words = _make_words([(i * 0.3, i * 0.3 + 0.25) for i in range(12)])
         segments = _group_words_into_segments(words)
         assert len(segments) >= 2

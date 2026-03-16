@@ -1,4 +1,4 @@
-"""Генерация караоке-субтитров в формате ASS."""
+"""Karaoke subtitle generation in ASS format."""
 
 from __future__ import annotations
 
@@ -11,24 +11,24 @@ from smkaraokemaker.utils.fonts import get_default_font
 
 logger = logging.getLogger(__name__)
 
-# Маппинг позиции на ASS Alignment
+# Position to ASS Alignment mapping
 POSITION_ALIGNMENT = {
     "bottom": 2,
     "center": 5,
     "top": 8,
 }
 
-COUNTDOWN_THRESHOLD = 5.0  # Пауза в секундах, после которой вставляется обратный отсчёт
-COUNTDOWN_DURATION = 3  # Количество секунд обратного отсчёта (3, 2, 1)
+COUNTDOWN_THRESHOLD = 5.0  # Pause in seconds after which a countdown is inserted
+COUNTDOWN_DURATION = 3  # Number of countdown seconds (3, 2, 1)
 
-# Отступ между двумя строками субтитров (px при PlayResY=1080)
+# Spacing between the two subtitle lines (px at PlayResY=1080)
 LINE_SPACING = 20
 
 
 def render_subtitles(ctx: PipelineContext) -> PipelineContext:
-    """Сгенерировать караоке-субтитры из распознанного текста."""
+    """Generate karaoke subtitles from recognized text."""
     if not ctx.transcript:
-        logger.warning("Нет распознанного текста — субтитры не будут созданы.")
+        logger.warning("No recognized text — subtitles will not be created.")
         ctx.subtitle_path = None
         return ctx
 
@@ -42,7 +42,7 @@ def render_subtitles(ctx: PipelineContext) -> PipelineContext:
         position=ctx.config.position,
     )
 
-    # Определяем разрешение для PlayRes в ASS
+    # Determine resolution for PlayRes in ASS
     parts = ctx.config.resolution.split("x")
     play_res = (int(parts[0]), int(parts[1]))
 
@@ -50,19 +50,19 @@ def render_subtitles(ctx: PipelineContext) -> PipelineContext:
     _generate_ass(ctx.transcript, style, ass_path, play_res=play_res)
 
     ctx.subtitle_path = ass_path
-    logger.info("ASS-субтитры: %d строк → %s", len(ctx.transcript), ass_path)
+    logger.info("ASS subtitles: %d lines → %s", len(ctx.transcript), ass_path)
     return ctx
 
 
 def _hex_to_ass_color(hex_color: str) -> str:
-    """Конвертировать #RRGGBB в ASS-формат &H00BBGGRR (BGR, без альфы)."""
+    """Convert #RRGGBB to ASS format &H00BBGGRR (BGR, no alpha)."""
     hex_color = hex_color.lstrip("#")
     r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"&H00{b:02X}{g:02X}{r:02X}"
 
 
 def _seconds_to_ass_time(seconds: float) -> str:
-    """Конвертировать секунды в формат ASS: H:MM:SS.CC."""
+    """Convert seconds to ASS format: H:MM:SS.CC."""
     h = int(seconds // 3600)
     m = int((seconds % 3600) // 60)
     s = int(seconds % 60)
@@ -73,7 +73,7 @@ def _seconds_to_ass_time(seconds: float) -> str:
 
 
 def _build_karaoke_text(segment: Segment) -> str:
-    """Построить текст с караоке-тегами \\kf для сегмента."""
+    """Build text with \\kf karaoke tags for a segment."""
     karaoke_parts = []
     for word in segment.words:
         duration_cs = max(1, int(round((word.end - word.start) * 100)))
@@ -82,7 +82,7 @@ def _build_karaoke_text(segment: Segment) -> str:
 
 
 def _build_done_text(segment: Segment, done_color: str) -> str:
-    """Построить текст уже спетой строки (весь в цвете done)."""
+    """Build text for an already sung line (all in done color)."""
     ass_color = _hex_to_ass_color(done_color)
     words = " ".join(w.text for w in segment.words)
     return f"{{\\c{ass_color}}}{words}"
@@ -94,28 +94,28 @@ def _generate_ass(
     output: Path,
     play_res: tuple[int, int] = (1920, 1080),
 ) -> None:
-    """Генерация ASS-файла с двухстрочным караоке-отображением.
+    """Generate ASS file with two-line karaoke display.
 
-    Логика чередования строк:
-    - Чётные сегменты (0, 2, 4…) всегда на Line1 (верхняя строка)
-    - Нечётные сегменты (1, 3, 5…) всегда на Line2 (нижняя строка)
-    - Когда поётся активный сегмент, на другой строке показывается
-      превью следующего сегмента
-    - Текст никогда не перепрыгивает между строками
+    Line alternation logic:
+    - Even segments (0, 2, 4...) always on Line1 (upper line)
+    - Odd segments (1, 3, 5...) always on Line2 (lower line)
+    - When the active segment is being sung, the other line shows
+      a preview of the next segment
+    - Text never jumps between lines
     """
     alignment = POSITION_ALIGNMENT.get(style.position, 2)
     font_name = style.font_path.stem
 
-    # ASS цвета
+    # ASS colors
     active_color = _hex_to_ass_color(style.color_active)
     inactive_color = _hex_to_ass_color(style.color_inactive)
     outline_color = _hex_to_ass_color(style.outline_color)
 
-    # Отступы для двух строк: верхняя строка выше, нижняя ниже
+    # Margins for two lines: upper line higher, lower line lower
     margin_line1 = style.margin_bottom + style.font_size + LINE_SPACING
     margin_line2 = style.margin_bottom
 
-    # Размер шрифта для обратного отсчёта — в 2 раза крупнее
+    # Countdown font size — 2x larger
     countdown_font_size = style.font_size * 2
 
     lines = [
@@ -131,15 +131,15 @@ def _generate_ass(
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "
         "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
         "Alignment, MarginL, MarginR, MarginV, Encoding",
-        # Строка 1 (верхняя) — активная с караоке
+        # Line 1 (upper) — active with karaoke
         f"Style: Line1,{font_name},{style.font_size},{inactive_color},{active_color},"
         f"{outline_color},&H80000000,1,0,0,0,100,100,0,0,1,{style.outline_width},"
         f"{style.shadow_offset[0]},{alignment},40,40,{margin_line1},1",
-        # Строка 2 (нижняя) — предпросмотр следующей строки
+        # Line 2 (lower) — preview of next line
         f"Style: Line2,{font_name},{style.font_size},{inactive_color},{active_color},"
         f"{outline_color},&H80000000,1,0,0,0,100,100,0,0,1,{style.outline_width},"
         f"{style.shadow_offset[0]},{alignment},40,40,{margin_line2},1",
-        # Обратный отсчёт — по центру экрана
+        # Countdown — centered on screen
         f"Style: Countdown,{font_name},{countdown_font_size},{active_color},{active_color},"
         f"{outline_color},&H80000000,1,0,0,0,100,100,0,0,1,4,2,5,40,40,40,1",
         "",
@@ -152,7 +152,7 @@ def _generate_ass(
     for i, segment in enumerate(segments):
         next_segment = segments[i + 1] if i + 1 < len(segments) else None
 
-        # Чередование: чётные сегменты → Line1, нечётные → Line2
+        # Alternation: even segments → Line1, odd → Line2
         if i % 2 == 0:
             active_style = "Line1"
             preview_style = "Line2"
@@ -160,7 +160,7 @@ def _generate_ass(
             active_style = "Line2"
             preview_style = "Line1"
 
-        # Обратный отсчёт 3-2-1, если пауза перед сегментом > 5 сек
+        # Countdown 3-2-1 if pause before segment > 5 sec
         gap = segment.start - prev_end
         if gap >= COUNTDOWN_THRESHOLD:
             countdown_start = segment.start - COUNTDOWN_DURATION
@@ -175,12 +175,12 @@ def _generate_ass(
         ass_start = _seconds_to_ass_time(segment.start)
         ass_end = _seconds_to_ass_time(segment.end)
 
-        # Активная строка с караоке-заливкой
+        # Active line with karaoke fill
         karaoke_text = _build_karaoke_text(segment)
         lines.append(f"Dialogue: 0,{ass_start},{ass_end},{active_style},,0,0,0,,{karaoke_text}")
 
-        # Превью следующего сегмента на другой строке
-        # Не показываем превью, если до следующего сегмента большая пауза
+        # Preview of the next segment on the other line
+        # Don't show preview if there's a long pause before the next segment
         if next_segment:
             next_gap = next_segment.start - segment.end
             if next_gap < COUNTDOWN_THRESHOLD:

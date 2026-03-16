@@ -1,4 +1,4 @@
-"""Тесты для сборки видео."""
+"""Tests for video assembly."""
 
 from pathlib import Path
 
@@ -11,7 +11,7 @@ from smkaraokemaker.utils.ffmpeg_utils import probe_media
 
 class TestVideoComposer:
     def test_compose_with_ass(self, sample_video, tmp_path):
-        # Сначала извлечём аудио как «инструментал»
+        # First extract audio as "instrumental"
         from smkaraokemaker.modules.audio_extractor import extract_audio
 
         config = KaraokeConfig(
@@ -26,10 +26,10 @@ class TestVideoComposer:
             config=config,
         )
         ctx = extract_audio(ctx)
-        # Используем полное аудио как инструментал (тест без реальной сепарации)
+        # Use full audio as instrumental (test without real separation)
         ctx.instrumental_path = ctx.audio_path
 
-        # Создаём минимальный ASS-файл
+        # Create a minimal ASS file
         ass_path = tmp_path / "karaoke.ass"
         ass_path.write_text(
             "[Script Info]\nTitle: Test\nScriptType: v4.00+\n\n"
@@ -55,7 +55,7 @@ class TestVideoComposer:
         assert info["duration"] > 0
 
     def test_compose_audio_only(self, sample_video, tmp_path):
-        """Тест сборки видео из аудио-входа (чёрный фон)."""
+        """Test video assembly from audio input (black background)."""
         from smkaraokemaker.modules.audio_extractor import extract_audio
 
         config = KaraokeConfig(
@@ -69,7 +69,7 @@ class TestVideoComposer:
             output_video=config.output_video,
             temp_dir=tmp_path,
             config=config,
-            has_video=False,  # Эмулируем аудио-вход
+            has_video=False,  # Simulate audio input
         )
         ctx = extract_audio(ctx)
         ctx.instrumental_path = ctx.audio_path
@@ -94,5 +94,5 @@ class TestVideoComposer:
             temp_dir=tmp_path,
             config=config,
         )
-        with pytest.raises(RuntimeError, match="Инструментал не найден"):
+        with pytest.raises(RuntimeError, match="Instrumental not found"):
             compose_video(ctx)

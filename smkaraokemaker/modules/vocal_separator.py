@@ -1,4 +1,4 @@
-"""Разделение аудио на вокал и инструментальную дорожку."""
+"""Separating audio into vocals and instrumental tracks."""
 
 from __future__ import annotations
 
@@ -15,15 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 def _save_wav(tensor, path: Path, samplerate: int) -> None:
-    """Сохранить torch.Tensor в WAV через стандартный модуль wave (без torchaudio)."""
+    """Save torch.Tensor to WAV using the standard wave module (no torchaudio)."""
     import torch
 
     # tensor shape: (channels, samples)
     wav = tensor.clamp(-1, 1)
-    # Конвертируем в int16
+    # Convert to int16
     data = (wav.numpy() * 32767).astype(np.int16)
     channels = data.shape[0]
-    # Interleave каналов: (channels, samples) → (samples, channels) → flatten
+    # Interleave channels: (channels, samples) → (samples, channels) → flatten
     data = data.T.flatten()
 
     with wave.open(str(path), "wb") as wf:
@@ -34,10 +34,10 @@ def _save_wav(tensor, path: Path, samplerate: int) -> None:
 
 
 class SeparatorBackend(Protocol):
-    """Протокол для бэкенда сепарации."""
+    """Protocol for separation backend."""
 
     def separate(self, audio_path: Path, output_dir: Path) -> tuple[Path, Path]:
-        """Разделить аудио на вокал и инструментал.
+        """Separate audio into vocals and instrumental.
 
         Returns:
             (vocals_path, instrumental_path)
@@ -46,7 +46,7 @@ class SeparatorBackend(Protocol):
 
 
 class DemucsBackend:
-    """Сепарация через Demucs (htdemucs_ft)."""
+    """Separation via Demucs (htdemucs_ft)."""
 
     MODEL = "htdemucs_ft"
 
@@ -62,38 +62,38 @@ class DemucsBackend:
             from demucs.audio import AudioFile
         except ImportError as e:
             raise RuntimeError(
-                f"Demucs не установлен. Установите: pip install 'smkaraokemaker[ml]'\n{e}"
+                f"Demucs is not installed. Install: pip install 'smkaraokemaker[ml]'\n{e}"
             )
 
         device = self._get_device()
         logger.info(
-            "Demucs: модель=%s, устройство=%s, shifts=%d, overlap=%.2f",
+            "Demucs: model=%s, device=%s, shifts=%d, overlap=%.2f",
             self.MODEL, device, self.shifts, self.overlap,
         )
 
-        # Загрузка модели
+        # Load model
         model = get_model(self.MODEL)
         model.to(device)
 
-        # Загрузка аудио через demucs AudioFile (не зависит от torchcodec)
+        # Load audio via demucs AudioFile (no torchcodec dependency)
         wav = AudioFile(audio_path).read(
             streams=0, samplerate=model.samplerate, channels=model.audio_channels
         )
 
-        # Нормализация
+        # Normalization
         ref = wav.mean(0)
         wav = (wav - ref.mean()) / ref.std()
         wav = wav.to(device)
 
-        # Сепарация с улучшенными параметрами:
-        # shifts > 1 — усреднение нескольких прогонов со сдвигом (лучше изоляция вокала)
-        # overlap — перекрытие сегментов (меньше артефактов на стыках)
+        # Separation with improved parameters:
+        # shifts > 1 — averaging multiple shifted passes (better vocal isolation)
+        # overlap — segment overlap (fewer artifacts at boundaries)
         sources = apply_model(
             model, wav[None], device=device, progress=True,
             shifts=self.shifts, overlap=self.overlap,
         )[0]
 
-        # Денормализация
+        # Denormalization
         sources = sources * ref.std() + ref.mean()
 
         # Demucs htdemucs_ft: sources = drums, bass, other, vocals
@@ -102,7 +102,7 @@ class DemucsBackend:
 
         vocals = sources[vocals_idx].cpu()
 
-        # Инструментал = всё кроме вокала
+        # Instrumental = everything except vocals
         instrumental = sum(
             sources[i].cpu() for i in range(len(source_names)) if i != vocals_idx
         )
@@ -113,7 +113,7 @@ class DemucsBackend:
         _save_wav(vocals, vocals_path, model.samplerate)
         _save_wav(instrumental, instrumental_path, model.samplerate)
 
-        logger.info("Сепарация завершена: %s, %s", vocals_path, instrumental_path)
+        logger.info("Separation complete: %s, %s", vocals_path, instrumental_path)
         return vocals_path, instrumental_path
 
     @staticmethod
@@ -128,21 +128,21 @@ class DemucsBackend:
 
 
 class SpleeterBackend:
-    """Сепарация через Spleeter (2stems). Заглушка для будущей реализации."""
+    """Separation via Spleeter (2stems). Stub for future implementation."""
 
     def separate(self, audio_path: Path, output_dir: Path) -> tuple[Path, Path]:
         raise NotImplementedError(
-            "Spleeter ещё не реализован. Используйте --separator demucs"
+            "Spleeter is not yet implemented. Use --separator demucs"
         )
 
 
 def get_separator(name: str, quality: str = "high") -> SeparatorBackend:
-    """Фабрика для получения бэкенда сепарации.
+    """Factory for obtaining a separation backend.
 
-    Параметры качества для Demucs:
-      draft:  shifts=0, overlap=0.25  — быстро, базовое качество
-      high:   shifts=1, overlap=0.25  — хороший баланс скорость/качество
-      ultra:  shifts=5, overlap=0.5   — максимальное качество изоляции вокала
+    Quality parameters for Demucs:
+      draft:  shifts=0, overlap=0.25  — fast, basic quality
+      high:   shifts=1, overlap=0.25  — good speed/quality balance
+      ultra:  shifts=5, overlap=0.5   — maximum vocal isolation quality
     """
     quality_params = {
         "draft": {"shifts": 0, "overlap": 0.25},
@@ -158,14 +158,14 @@ def get_separator(name: str, quality: str = "high") -> SeparatorBackend:
     factory = backends.get(name)
     if factory is None:
         available = ", ".join(backends.keys())
-        raise ValueError(f"Неизвестный сепаратор '{name}'. Доступные: {available}")
+        raise ValueError(f"Unknown separator '{name}'. Available: {available}")
     return factory()
 
 
 def separate_vocals(ctx: PipelineContext) -> PipelineContext:
-    """Разделить аудио на вокал и инструментал."""
+    """Separate audio into vocals and instrumental."""
     if ctx.audio_path is None:
-        raise RuntimeError("Аудиофайл не найден. Сначала выполните извлечение аудио.")
+        raise RuntimeError("Audio file not found. Run audio extraction first.")
 
     backend = get_separator(ctx.config.separator, ctx.config.quality.value)
     vocals_path, instrumental_path = backend.separate(ctx.audio_path, ctx.temp_dir)

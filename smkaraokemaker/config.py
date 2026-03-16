@@ -1,4 +1,4 @@
-"""Конфигурация и контекст пайплайна."""
+"""Pipeline configuration and context."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from smkaraokemaker.models import Segment
 
 
 class QualityProfile(str, Enum):
-    """Профили качества выходного видео."""
+    """Output video quality profiles."""
 
     DRAFT = "draft"
     HIGH = "high"
@@ -31,7 +31,7 @@ class QualityProfile(str, Enum):
 
 @dataclass
 class KaraokeConfig:
-    """Все настройки из CLI."""
+    """All settings from CLI."""
 
     input_video: Path
     output_video: Path
@@ -53,16 +53,16 @@ class KaraokeConfig:
 
 @dataclass
 class PipelineContext:
-    """Контекст, передаваемый между модулями пайплайна."""
+    """Context passed between pipeline modules."""
 
     input_video: Path
     output_video: Path
     temp_dir: Path
     config: KaraokeConfig
 
-    has_video: bool = True  # False когда вход — аудиофайл
+    has_video: bool = True  # False when input is an audio file
 
-    # Заполняется по мере выполнения
+    # Populated during execution
     audio_path: Path | None = None
     vocals_path: Path | None = None
     instrumental_path: Path | None = None

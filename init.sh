@@ -1,32 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== SMKaraokeMaker — инициализация окружения ==="
+echo "=== SMKaraokeMaker — environment setup ==="
 echo ""
 
-# Функция для запроса подтверждения
+# Confirmation prompt function
 confirm() {
     local prompt="$1"
     read -r -p "$prompt [y/n]: " answer
     [[ "$answer" =~ ^[Yy]$ ]]
 }
 
-# ---------- Проверка macOS ----------
+# ---------- macOS check ----------
 if [[ "$(uname)" != "Darwin" ]]; then
-    echo "⚠  Скрипт предназначен для macOS. На других ОС установка может отличаться."
+    echo "⚠  This script is intended for macOS. Installation may differ on other OSes."
 fi
 
 # ---------- Homebrew ----------
 if ! command -v brew &>/dev/null; then
-    echo "✗ Homebrew не найден."
-    if confirm "  Установить Homebrew?"; then
+    echo "✗ Homebrew not found."
+    if confirm "  Install Homebrew?"; then
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        # Добавить brew в PATH для текущей сессии (Apple Silicon)
+        # Add brew to PATH for current session (Apple Silicon)
         if [[ -f /opt/homebrew/bin/brew ]]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
         fi
     else
-        echo "  Без Homebrew невозможно продолжить. Выход."
+        echo "  Cannot continue without Homebrew. Exiting."
         exit 1
     fi
 fi
@@ -53,98 +53,98 @@ PYTHON=""
 if PYTHON=$(find_python); then
     echo "✓ Python: $($PYTHON --version)"
 else
-    echo "✗ Python 3.11+ не найден (текущий: $(python3 --version 2>/dev/null || echo 'отсутствует'))."
-    if confirm "  Установить Python 3.12 через Homebrew?"; then
+    echo "✗ Python 3.11+ not found (current: $(python3 --version 2>/dev/null || echo 'not installed'))."
+    if confirm "  Install Python 3.12 via Homebrew?"; then
         brew install python@3.12
-        # Обновить PATH
+        # Update PATH
         export PATH="$(brew --prefix python@3.12)/libexec/bin:$PATH"
         if PYTHON=$(find_python); then
-            echo "✓ Python установлен: $($PYTHON --version)"
+            echo "✓ Python installed: $($PYTHON --version)"
         else
-            echo "✗ Не удалось найти Python 3.11+ после установки. Попробуйте перезапустить терминал."
+            echo "✗ Could not find Python 3.11+ after installation. Try restarting the terminal."
             exit 1
         fi
     else
-        echo "  Без Python 3.11+ невозможно продолжить. Выход."
+        echo "  Cannot continue without Python 3.11+. Exiting."
         exit 1
     fi
 fi
 
-# ---------- FFmpeg с libass ----------
+# ---------- FFmpeg with libass ----------
 install_ffmpeg=false
 
 if ! command -v ffmpeg &>/dev/null; then
-    echo "✗ FFmpeg не найден."
-    if confirm "  Установить FFmpeg с libass?"; then
+    echo "✗ FFmpeg not found."
+    if confirm "  Install FFmpeg with libass?"; then
         install_ffmpeg=true
     else
-        echo "  ⚠  Без FFmpeg приложение не сможет работать."
+        echo "  ⚠  The application cannot work without FFmpeg."
     fi
 else
     if ffmpeg -filters 2>/dev/null | grep -q "ass"; then
-        echo "✓ FFmpeg: $(ffmpeg -version 2>/dev/null | head -1 | awk '{print $3}') (libass есть)"
+        echo "✓ FFmpeg: $(ffmpeg -version 2>/dev/null | head -1 | awk '{print $3}') (libass available)"
     else
-        echo "⚠  FFmpeg установлен, но без поддержки libass (нужна для субтитров)."
-        if confirm "  Переустановить FFmpeg с libass?"; then
+        echo "⚠  FFmpeg is installed but without libass support (required for subtitles)."
+        if confirm "  Reinstall FFmpeg with libass?"; then
             brew uninstall ffmpeg 2>/dev/null || true
             install_ffmpeg=true
         else
-            echo "  ⚠  Без libass караоке-субтитры не будут работать."
+            echo "  ⚠  Karaoke subtitles will not work without libass."
         fi
     fi
 fi
 
 if $install_ffmpeg; then
-    echo "  Подключаю tap homebrew-ffmpeg/ffmpeg..."
+    echo "  Adding tap homebrew-ffmpeg/ffmpeg..."
     brew tap homebrew-ffmpeg/ffmpeg 2>/dev/null || true
-    echo "  Устанавливаю FFmpeg с libass (это может занять несколько минут)..."
+    echo "  Installing FFmpeg with libass (this may take a few minutes)..."
     brew install homebrew-ffmpeg/ffmpeg/ffmpeg
-    echo "✓ FFmpeg установлен"
+    echo "✓ FFmpeg installed"
 fi
 
-# ---------- Виртуальное окружение ----------
+# ---------- Virtual environment ----------
 VENV_DIR=".venv"
 echo ""
 
 if [[ ! -d "$VENV_DIR" ]]; then
-    echo "Создаю виртуальное окружение ($VENV_DIR)..."
+    echo "Creating virtual environment ($VENV_DIR)..."
     $PYTHON -m venv "$VENV_DIR"
-    echo "✓ Виртуальное окружение создано"
+    echo "✓ Virtual environment created"
 else
-    echo "✓ Виртуальное окружение уже существует ($VENV_DIR)"
+    echo "✓ Virtual environment already exists ($VENV_DIR)"
 fi
 
-# Активация
+# Activation
 source "$VENV_DIR/bin/activate"
-echo "✓ Окружение активировано: $(python --version)"
+echo "✓ Environment activated: $(python --version)"
 
-# ---------- Обновление pip ----------
+# ---------- Upgrade pip ----------
 echo ""
-echo "Обновляю pip..."
+echo "Upgrading pip..."
 pip install --upgrade pip --quiet
 
-# ---------- Установка проекта ----------
-echo "Устанавливаю SMKaraokeMaker со всеми зависимостями..."
-echo "  (core + ml + dev — это может занять несколько минут)"
+# ---------- Install project ----------
+echo "Installing SMKaraokeMaker with all dependencies..."
+echo "  (core + ml + dev — this may take a few minutes)"
 pip install -e ".[ml,dev]" --quiet
 
 echo ""
-echo "✓ Установлено:"
+echo "✓ Installed:"
 pip list 2>/dev/null | grep -iE "torch|demucs|faster-whisper|typer|rich|pytest" | sed 's/^/  /'
 
-# ---------- Проверка ----------
+# ---------- Verification ----------
 echo ""
-echo "=== Проверка зависимостей ==="
+echo "=== Dependency check ==="
 smkaraokemaker check
 
 echo ""
-echo "=== Готово! ==="
+echo "=== Done! ==="
 echo ""
-echo "Для активации окружения в новом терминале:"
+echo "To activate the environment in a new terminal:"
 echo "  source .venv/bin/activate"
 echo ""
-echo "Запуск:"
+echo "Run:"
 echo "  smkaraokemaker run video.mp4"
 echo ""
-echo "Тесты:"
+echo "Tests:"
 echo "  pytest"

@@ -1,4 +1,4 @@
-"""Тесты для менеджера временных файлов."""
+"""Tests for temporary file manager."""
 
 from pathlib import Path
 
@@ -20,9 +20,9 @@ class TestTempManager:
 
         with TempManager(fake_input) as tm:
             temp_dir = tm.temp_dir
-            # Создадим файл внутри
+            # Create a file inside
             (temp_dir / "test.txt").write_text("hello")
-        # После выхода из контекста директория должна быть удалена
+        # After exiting the context, the directory should be deleted
         assert not temp_dir.exists()
 
     def test_keep_temp(self, tmp_path):
@@ -32,7 +32,7 @@ class TestTempManager:
         with TempManager(fake_input, keep_temp=True) as tm:
             temp_dir = tm.temp_dir
         assert temp_dir.exists()
-        # Чистим вручную
+        # Clean up manually
         import shutil
         shutil.rmtree(temp_dir)
 
@@ -58,7 +58,7 @@ class TestTempManager:
             tm.mark_step_done("extract_audio", output)
             assert tm.is_step_done("extract_audio")
 
-        # Повторно открываем — кэш должен сохраниться
+        # Reopen — cache should persist
         with TempManager(fake_input, keep_temp=True) as tm2:
             assert tm2.is_step_done("extract_audio")
 

@@ -1,4 +1,4 @@
-"""Тесты для базовых моделей данных."""
+"""Tests for base data models."""
 
 from pathlib import Path
 
@@ -7,27 +7,27 @@ from smkaraokemaker.models import Word, Segment, SubtitleStyle
 
 class TestWord:
     def test_create_word(self):
-        w = Word(text="привет", start=1.0, end=1.5, confidence=0.95)
-        assert w.text == "привет"
+        w = Word(text="hello", start=1.0, end=1.5, confidence=0.95)
+        assert w.text == "hello"
         assert w.start == 1.0
         assert w.end == 1.5
         assert w.confidence == 0.95
 
     def test_default_confidence(self):
-        w = Word(text="мир", start=2.0, end=2.3)
+        w = Word(text="world", start=2.0, end=2.3)
         assert w.confidence == 1.0
 
 
 class TestSegment:
     def test_create_segment(self):
         words = [
-            Word(text="Я", start=1.0, end=1.1),
-            Word(text="помню", start=1.2, end=1.5),
-            Word(text="чудное", start=1.6, end=2.0),
-            Word(text="мгновенье", start=2.1, end=2.8),
+            Word(text="I", start=1.0, end=1.1),
+            Word(text="remember", start=1.2, end=1.5),
+            Word(text="a", start=1.6, end=2.0),
+            Word(text="moment", start=2.1, end=2.8),
         ]
         seg = Segment(
-            text="Я помню чудное мгновенье",
+            text="I remember a moment",
             words=words,
             start=1.0,
             end=2.8,

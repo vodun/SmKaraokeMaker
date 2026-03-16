@@ -1,4 +1,4 @@
-"""CLI-интерфейс SMKaraokeMaker."""
+"""CLI interface for SMKaraokeMaker."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def _version_callback(value: bool) -> None:
 
 app = typer.Typer(
     name="smkaraokemaker",
-    help="Генератор караоке-видео из музыкальных клипов.",
+    help="Karaoke video generator from music videos.",
     add_completion=False,
 )
 
@@ -35,7 +35,7 @@ def callback(
         typer.Option("--version", callback=_version_callback, is_eager=True),
     ] = None,
 ) -> None:
-    """SMKaraokeMaker — генератор караоке-видео из музыкальных клипов."""
+    """SMKaraokeMaker — karaoke video generator from music videos."""
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
 
@@ -44,74 +44,74 @@ def callback(
 def run(
     input_video: Annotated[
         Path,
-        typer.Argument(help="Путь к медиафайлу (видео или аудио)", exists=True),
+        typer.Argument(help="Path to media file (video or audio)", exists=True),
     ],
     output: Annotated[
         Optional[Path],
-        typer.Option("-o", "--output", help="Путь к выходному файлу"),
+        typer.Option("-o", "--output", help="Path to output file"),
     ] = None,
     lang: Annotated[
         str,
-        typer.Option("--lang", help="Язык распознавания (ISO 639-1)"),
+        typer.Option("--lang", help="Recognition language (ISO 639-1)"),
     ] = "auto",
     model: Annotated[
         str,
-        typer.Option("--model", help="Размер модели Whisper"),
+        typer.Option("--model", help="Whisper model size"),
     ] = "large-v3",
     font: Annotated[
         Optional[Path],
-        typer.Option("--font", help="Путь к .ttf-шрифту для субтитров"),
+        typer.Option("--font", help="Path to .ttf font for subtitles"),
     ] = None,
     font_size: Annotated[
         int,
-        typer.Option("--font-size", help="Размер шрифта в пикселях"),
+        typer.Option("--font-size", help="Font size in pixels"),
     ] = 64,
     color_active: Annotated[
         str,
-        typer.Option("--color-active", help="Цвет текущего слова (hex)"),
+        typer.Option("--color-active", help="Current word color (hex)"),
     ] = "#FFD700",
     color_inactive: Annotated[
         str,
-        typer.Option("--color-inactive", help="Цвет ещё не спетых слов (hex)"),
+        typer.Option("--color-inactive", help="Upcoming words color (hex)"),
     ] = "#FFFFFF",
     color_done: Annotated[
         str,
-        typer.Option("--color-done", help="Цвет уже спетых слов (hex)"),
+        typer.Option("--color-done", help="Already sung words color (hex)"),
     ] = "#AAAAAA",
     position: Annotated[
         str,
-        typer.Option("--position", help="Позиция текста: top, center, bottom"),
+        typer.Option("--position", help="Text position: top, center, bottom"),
     ] = "bottom",
     separator: Annotated[
         str,
-        typer.Option("--separator", help="Движок сепарации: demucs или spleeter"),
+        typer.Option("--separator", help="Separation engine: demucs or spleeter"),
     ] = "demucs",
     lyrics: Annotated[
         Optional[Path],
-        typer.Option("--lyrics", help="Готовый текст песни (.txt / .lrc)"),
+        typer.Option("--lyrics", help="Pre-made lyrics file (.txt / .lrc)"),
     ] = None,
     keep_temp: Annotated[
         bool,
-        typer.Option("--keep-temp", help="Не удалять промежуточные файлы"),
+        typer.Option("--keep-temp", help="Keep intermediate files"),
     ] = False,
     quality: Annotated[
         QualityProfile,
-        typer.Option("--quality", help="Качество вывода: draft, high, ultra"),
+        typer.Option("--quality", help="Output quality: draft, high, ultra"),
     ] = QualityProfile.HIGH,
     resolution: Annotated[
         str,
-        typer.Option("--resolution", help="Разрешение видео для аудио-входа (WxH)"),
+        typer.Option("--resolution", help="Video resolution for audio input (WxH)"),
     ] = "1280x720",
     verbose: Annotated[
         bool,
-        typer.Option("-v", "--verbose", help="Подробный вывод"),
+        typer.Option("-v", "--verbose", help="Verbose output"),
     ] = False,
 ) -> None:
-    """Конвертировать медиафайл (видео или аудио) в караоке."""
+    """Convert a media file (video or audio) to karaoke."""
     from smkaraokemaker.utils.validators import is_audio_only_format
 
     output_path = output or input_video.with_stem(f"{input_video.stem}_karaoke")
-    # Для аудио-входа принудительно ставим .mp4
+    # Force .mp4 extension for audio input
     if is_audio_only_format(input_video) and output_path.suffix.lower() != ".mp4":
         output_path = output_path.with_suffix(".mp4")
 
@@ -141,8 +141,8 @@ def run(
 
 @app.command("check")
 def check_dependencies() -> None:
-    """Проверить все зависимости и готовность к работе."""
-    console.print(f"[bold]SMKaraokeMaker v{__version__} — проверка зависимостей\n")
+    """Check all dependencies and readiness."""
+    console.print(f"[bold]SMKaraokeMaker v{__version__} — dependency check\n")
 
     all_ok = True
 
@@ -166,7 +166,7 @@ def check_dependencies() -> None:
     import shutil
     def check_ffmpeg():
         if shutil.which("ffmpeg") is None:
-            raise RuntimeError("не найден")
+            raise RuntimeError("not found")
         import subprocess
         r = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True)
         ver = r.stdout.split("\n")[0].split(" ")[2] if r.stdout else "unknown"
@@ -178,8 +178,8 @@ def check_dependencies() -> None:
         r = subprocess.run(["ffmpeg", "-filters"], capture_output=True, text=True)
         for line in r.stdout.splitlines():
             if line.strip().startswith(".. ass") or line.strip().startswith("T. ass"):
-                return "доступен"
-        raise RuntimeError("фильтр ass не найден")
+                return "available"
+        raise RuntimeError("ass filter not found")
     _check("FFmpeg libass", check_libass, "brew install homebrew-ffmpeg/ffmpeg/ffmpeg")
 
     def check_torch():
@@ -206,10 +206,10 @@ def check_dependencies() -> None:
         from smkaraokemaker.utils.fonts import get_default_font
         p = get_default_font()
         return str(p.name)
-    _check("Шрифт по умолчанию", check_font)
+    _check("Default font", check_font)
 
     console.print()
     if all_ok:
-        console.print("[bold green]Все зависимости в порядке. Готово к работе!")
+        console.print("[bold green]All dependencies are in order. Ready to go!")
     else:
-        console.print("[bold yellow]Некоторые зависимости отсутствуют. Исправьте и запустите проверку снова.")
+        console.print("[bold yellow]Some dependencies are missing. Fix them and run the check again.")

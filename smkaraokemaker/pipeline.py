@@ -1,4 +1,4 @@
-"""Оркестратор пайплайна SMKaraokeMaker."""
+"""SMKaraokeMaker pipeline orchestrator."""
 
 from __future__ import annotations
 
@@ -30,56 +30,56 @@ from smkaraokemaker.utils.validators import (
 logger = logging.getLogger(__name__)
 console = Console()
 
-# (название, модуль, функция, имя шага для кэша)
+# (display name, module, function, step name for cache)
 STEPS: list[tuple[str, str, str]] = [
-    ("Извлечение аудио", "modules.audio_extractor", "extract_audio"),
-    ("Разделение вокала и музыки", "modules.vocal_separator", "separate_vocals"),
-    ("Распознавание текста и таймингов", "modules.speech_recognizer", "recognize_speech"),
-    ("Генерация караоке-субтитров", "modules.subtitle_renderer", "render_subtitles"),
-    ("Рендер финального видео", "modules.video_composer", "compose_video"),
+    ("Extracting audio", "modules.audio_extractor", "extract_audio"),
+    ("Separating vocals and music", "modules.vocal_separator", "separate_vocals"),
+    ("Recognizing text and timings", "modules.speech_recognizer", "recognize_speech"),
+    ("Generating karaoke subtitles", "modules.subtitle_renderer", "render_subtitles"),
+    ("Rendering final video", "modules.video_composer", "compose_video"),
 ]
 
 
 def run_pipeline(config: KaraokeConfig) -> None:
-    """Запустить полный пайплайн обработки."""
+    """Run the full processing pipeline."""
     if config.verbose:
         logging.basicConfig(level=logging.DEBUG, format="%(name)s: %(message)s")
 
-    # Валидация
+    # Validation
     try:
         validate_input_file(config.input_video)
         validate_ffmpeg_available()
         validate_disk_space(config.input_video)
     except ValidationError as e:
-        console.print(f"[bold red]Ошибка:[/] {e}")
+        console.print(f"[bold red]Error:[/] {e}")
         raise SystemExit(1)
 
-    # Проверка ML-зависимостей
+    # Check ML dependencies
     _check_ml_dependencies()
 
-    # Метаданные для информации
+    # Media metadata
     info = probe_media(config.input_video)
     if not info["has_audio"]:
-        console.print("[bold red]Ошибка:[/] Файл не содержит аудиодорожки")
+        console.print("[bold red]Error:[/] File does not contain an audio track")
         raise SystemExit(1)
 
     has_video = info["has_video"]
     duration = info["duration"]
 
-    # Для видео-входа устанавливаем resolution из метаданных
+    # For video input, set resolution from metadata
     if has_video:
         config.resolution = f"{info['width']}x{info['height']}"
 
     if has_video:
         console.print(
-            f"[bold]Входной файл:[/] {config.input_video.name} "
+            f"[bold]Input file:[/] {config.input_video.name} "
             f"({info['width']}x{info['height']}, "
-            f"{duration:.0f} сек, {info['fps']:.0f} fps)"
+            f"{duration:.0f} sec, {info['fps']:.0f} fps)"
         )
     else:
         console.print(
-            f"[bold]Входной файл:[/] {config.input_video.name} "
-            f"(аудио, {duration:.0f} сек) → видео {config.resolution}"
+            f"[bold]Input file:[/] {config.input_video.name} "
+            f"(audio, {duration:.0f} sec) → video {config.resolution}"
         )
     console.print()
 
@@ -92,23 +92,23 @@ def run_pipeline(config: KaraokeConfig) -> None:
             has_video=has_video,
         )
 
-        # Восстановление контекста из кэша
+        # Restore context from cache
         _restore_context_from_cache(ctx, tm)
 
         total = len(STEPS)
         interrupted = False
 
-        # Обработка Ctrl+C (первый раз — мягкое, второй — принудительное)
+        # Handle Ctrl+C (first time — graceful, second — forced)
         original_handler = signal.getsignal(signal.SIGINT)
 
         def _handle_interrupt(signum, frame):
             nonlocal interrupted
             if interrupted:
-                console.print("\n[bold red]Принудительное завершение.[/]")
+                console.print("\n[bold red]Forced termination.[/]")
                 signal.signal(signal.SIGINT, original_handler)
                 raise KeyboardInterrupt
             interrupted = True
-            console.print("\n[yellow]Прерывание... завершаю текущий шаг. Нажмите Ctrl+C ещё раз для принудительного выхода.[/]")
+            console.print("\n[yellow]Interrupting... finishing current step. Press Ctrl+C again to force quit.[/]")
 
         signal.signal(signal.SIGINT, _handle_interrupt)
 
@@ -127,12 +127,12 @@ def run_pipeline(config: KaraokeConfig) -> None:
 
                     task = progress.add_task(f"[{i}/{total}] {name}", total=100)
 
-                    # Проверяем кэш
+                    # Check cache
                     if tm.is_step_done(func_name):
                         progress.update(
                             task,
                             completed=100,
-                            description=f"[{i}/{total}] {name} [dim](кэш)[/dim]",
+                            description=f"[{i}/{total}] {name} [dim](cached)[/dim]",
                         )
                         continue
 
@@ -145,7 +145,7 @@ def run_pipeline(config: KaraokeConfig) -> None:
                     ctx = step_func(ctx)
                     elapsed = time.time() - start_time
 
-                    # Определяем выходной файл для кэша
+                    # Determine output file for cache
                     output_file = _get_step_output(ctx, func_name)
                     tm.mark_step_done(func_name, output_file)
 
@@ -153,11 +153,11 @@ def run_pipeline(config: KaraokeConfig) -> None:
 
                     if config.verbose:
                         console.print(
-                            f"  [dim]└ {name}: {elapsed:.1f} сек[/dim]"
+                            f"  [dim]└ {name}: {elapsed:.1f} sec[/dim]"
                         )
 
             if interrupted:
-                console.print("[yellow]Прервано. Для продолжения запустите ту же команду.[/]")
+                console.print("[yellow]Interrupted. Run the same command to continue.[/]")
                 raise SystemExit(130)
 
             console.print()
@@ -165,17 +165,17 @@ def run_pipeline(config: KaraokeConfig) -> None:
             minutes = int(duration // 60)
             seconds = int(duration % 60)
             console.print(
-                f"[bold green]✓ Готово:[/] {config.output_video} "
-                f"({size_mb:.0f} МБ, {minutes}:{seconds:02d})"
+                f"[bold green]✓ Done:[/] {config.output_video} "
+                f"({size_mb:.0f} MB, {minutes}:{seconds:02d})"
             )
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except NotImplementedError as e:
-            console.print(f"\n[yellow]Шаг ещё не реализован:[/] {e}")
+            console.print(f"\n[yellow]Step not yet implemented:[/] {e}")
             raise SystemExit(1)
         except Exception as e:
-            console.print(f"\n[bold red]Ошибка:[/] {e}")
+            console.print(f"\n[bold red]Error:[/] {e}")
             if config.verbose:
                 console.print_exception()
             raise SystemExit(1)
@@ -184,7 +184,7 @@ def run_pipeline(config: KaraokeConfig) -> None:
 
 
 def _get_step_output(ctx: PipelineContext, func_name: str) -> "Path | None":
-    """Получить путь выходного файла для данного шага."""
+    """Get the output file path for a given step."""
     from pathlib import Path
 
     mapping: dict[str, Path | None] = {
@@ -198,7 +198,7 @@ def _get_step_output(ctx: PipelineContext, func_name: str) -> "Path | None":
 
 
 def _restore_context_from_cache(ctx: PipelineContext, tm: TempManager) -> None:
-    """Восстановить контекст из кэшированных файлов."""
+    """Restore context from cached files."""
     audio = tm.get_path("audio_full.wav")
     if audio.exists():
         ctx.audio_path = audio
@@ -228,27 +228,27 @@ def _restore_context_from_cache(ctx: PipelineContext, tm: TempManager) -> None:
 
 
 def _check_ml_dependencies() -> None:
-    """Проверить ML-зависимости перед запуском пайплайна."""
+    """Check ML dependencies before running the pipeline."""
     errors = []
 
     try:
         import torch
     except ImportError:
-        errors.append("PyTorch не установлен")
+        errors.append("PyTorch is not installed")
 
     try:
         from demucs.pretrained import get_model
         from demucs.apply import apply_model
         from demucs.audio import AudioFile
     except ImportError:
-        errors.append("Demucs не установлен")
+        errors.append("Demucs is not installed")
 
     try:
         from faster_whisper import WhisperModel
     except ImportError:
-        errors.append("faster-whisper не установлен")
+        errors.append("faster-whisper is not installed")
 
-    # Проверяем FFmpeg фильтр ass
+    # Check FFmpeg ass filter
     import subprocess
     r = subprocess.run(["ffmpeg", "-filters"], capture_output=True, text=True)
     has_ass = any(
@@ -256,12 +256,12 @@ def _check_ml_dependencies() -> None:
         for line in r.stdout.splitlines()
     )
     if not has_ass:
-        errors.append("FFmpeg без поддержки libass (нужен для субтитров)")
+        errors.append("FFmpeg without libass support (required for subtitles)")
 
     if errors:
-        console.print("[bold red]Предстартовая проверка не пройдена:[/]")
+        console.print("[bold red]Pre-launch check failed:[/]")
         for err in errors:
             console.print(f"  [red]✗[/] {err}")
-        console.print("\n[dim]Установите зависимости: pip install 'smkaraokemaker[ml]'")
-        console.print("Проверьте всё: smkaraokemaker check[/]")
+        console.print("\n[dim]Install dependencies: pip install 'smkaraokemaker[ml]'")
+        console.print("Run full check: smkaraokemaker check[/]")
         raise SystemExit(1)
