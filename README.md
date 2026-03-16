@@ -62,14 +62,58 @@ ffmpeg -filters 2>/dev/null | grep ass
 
 ## Installation
 
-### From source
+### Quick start (recommended)
+
+```bash
+git clone https://github.com/vodun/SmKaraokeMaker.git
+cd SmKaraokeMaker
+./init.sh
+```
+
+The `init.sh` script automatically:
+- Checks Python 3.11+ and Homebrew (offers to install if missing)
+- Installs FFmpeg with libass support (via `homebrew-ffmpeg` tap)
+- Creates a `.venv` virtual environment
+- Installs all dependencies (core + ML + dev)
+- Runs `smkaraokemaker check` to verify everything works
+
+> **Important:** after `init.sh` completes (or when opening a new terminal), activate the environment:
+> ```bash
+> source .venv/bin/activate
+> ```
+> The `smkaraokemaker` command will then be available.
+
+### Running
+
+```bash
+# Activate the environment (required for each new terminal session)
+source .venv/bin/activate
+
+# Verify everything works
+smkaraokemaker check
+
+# Create a karaoke video
+smkaraokemaker run video.mp4
+
+# Run tests
+pytest
+```
+
+### Manual install
 
 ```bash
 git clone https://github.com/vodun/SmKaraokeMaker.git
 cd SmKaraokeMaker
 
+# Install Python 3.12 (if you don't have 3.11+)
+brew install python@3.12
+
+# Install FFmpeg with libass
+brew tap homebrew-ffmpeg/ffmpeg
+brew install homebrew-ffmpeg/ffmpeg/ffmpeg
+
 # Create virtual environment
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 
 # Install with ML dependencies
@@ -77,6 +121,9 @@ pip install -e ".[ml]"
 
 # Or minimal install (no ML — for development/testing)
 pip install -e ".[dev]"
+
+# Verify dependencies
+smkaraokemaker check
 ```
 
 ### Dependencies
@@ -259,6 +306,7 @@ For quick preview: `--quality draft --model small` reduces processing time by 3-
 
 ```
 SmKaraokeMaker/
+├── init.sh                       # Environment setup script
 ├── pyproject.toml                 # Dependencies, entry point
 ├── smkaraokemaker/
 │   ├── __init__.py                # Package version

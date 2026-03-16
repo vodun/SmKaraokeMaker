@@ -7,7 +7,7 @@
 CLI-приложение для macOS, которое принимает на вход музыкальное видео и автоматически превращает его в караоке: отделяет вокал от инструментала, распознаёт текст песни с точными таймингами по словам, накладывает синхронизированные субтитры с подсветкой текущего слова и выдаёт готовый MP4-файл.
 
 ```
-$ smkaraokemaker input.mp4 -o karaoke_output.mp4
+$ smkaraokemaker run input.mp4 -o karaoke_output.mp4
 
 Входной файл: input.mp4 (1920x1080, 222 сек, 30 fps)
 
@@ -62,14 +62,58 @@ ffmpeg -filters 2>/dev/null | grep ass
 
 ## Установка
 
-### Из исходников
+### Быстрый старт (рекомендуется)
 
 ```bash
-git clone https://github.com/user/smkaraokemaker.git
-cd smkaraokemaker
+git clone https://github.com/vodun/SmKaraokeMaker.git
+cd SmKaraokeMaker
+./init.sh
+```
+
+Скрипт `init.sh` автоматически:
+- Проверяет наличие Python 3.11+ и Homebrew (предложит установить, если нет)
+- Устанавливает FFmpeg с поддержкой libass (через tap `homebrew-ffmpeg`)
+- Создаёт виртуальное окружение `.venv`
+- Устанавливает все зависимости (core + ML + dev)
+- Запускает `smkaraokemaker check` для проверки
+
+> **Важно:** после завершения `init.sh` (или при открытии нового терминала) нужно активировать окружение:
+> ```bash
+> source .venv/bin/activate
+> ```
+> После этого команда `smkaraokemaker` станет доступна.
+
+### Запуск
+
+```bash
+# Активировать окружение (обязательно при каждом новом терминале)
+source .venv/bin/activate
+
+# Проверить, что всё работает
+smkaraokemaker check
+
+# Создать караоке-видео
+smkaraokemaker run video.mp4
+
+# Запуск тестов
+pytest
+```
+
+### Ручная установка
+
+```bash
+git clone https://github.com/vodun/SmKaraokeMaker.git
+cd SmKaraokeMaker
+
+# Установить Python 3.12 (если нет 3.11+)
+brew install python@3.12
+
+# Установить FFmpeg с libass
+brew tap homebrew-ffmpeg/ffmpeg
+brew install homebrew-ffmpeg/ffmpeg/ffmpeg
 
 # Создать виртуальное окружение
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 
 # Установить с ML-зависимостями
@@ -77,6 +121,9 @@ pip install -e ".[ml]"
 
 # Или минимальная установка (без ML — для разработки/тестов)
 pip install -e ".[dev]"
+
+# Проверить зависимости
+smkaraokemaker check
 ```
 
 ### Зависимости
@@ -101,26 +148,26 @@ pip install -e ".[dev]"
 ### Базовый вызов
 
 ```bash
-smkaraokemaker video.mp4
+smkaraokemaker run video.mp4
 # Результат: video_karaoke.mp4
 ```
 
 ### С указанием выхода и языка
 
 ```bash
-smkaraokemaker video.mp4 -o karaoke.mp4 --lang ru
+smkaraokemaker run video.mp4 -o karaoke.mp4 --lang ru
 ```
 
 ### Быстрый черновик (для превью)
 
 ```bash
-smkaraokemaker video.mp4 --quality draft
+smkaraokemaker run video.mp4 --quality draft
 ```
 
 ### Кастомные цвета
 
 ```bash
-smkaraokemaker video.mp4 \
+smkaraokemaker run video.mp4 \
   --color-active "#FF4444" \
   --color-inactive "#CCCCCC" \
   --color-done "#666666"
@@ -129,13 +176,13 @@ smkaraokemaker video.mp4 \
 ### Свой шрифт и размер
 
 ```bash
-smkaraokemaker video.mp4 --font /path/to/MyFont.ttf --font-size 64
+smkaraokemaker run video.mp4 --font /path/to/MyFont.ttf --font-size 64
 ```
 
 ### Подробный вывод (отладка)
 
 ```bash
-smkaraokemaker video.mp4 -v --keep-temp
+smkaraokemaker run video.mp4 -v --keep-temp
 ```
 
 ---
@@ -219,7 +266,7 @@ Dialogue: 0,0:01:05.00,0:01:10.00,Karaoke,,0,0,0,,{\kf50}Я {\kf30}помню {\
 При повторном запуске с тем же файлом SMKaraokeMaker автоматически пропускает уже выполненные шаги:
 
 ```
-$ smkaraokemaker video.mp4 -o karaoke.mp4
+$ smkaraokemaker run video.mp4 -o karaoke.mp4
 
  [1/5] Извлечение аудио (кэш)         ██████████ 100%
  [2/5] Разделение вокала и музыки (кэш)██████████ 100%
@@ -253,6 +300,7 @@ $ smkaraokemaker video.mp4 -o karaoke.mp4
 
 ```
 smkaraokemaker/
+├── init.sh                       # Скрипт установки окружения
 ├── pyproject.toml                 # Зависимости, entry point
 ├── smkaraokemaker/
 │   ├── __init__.py                # Версия пакета
