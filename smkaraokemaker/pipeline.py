@@ -85,13 +85,17 @@ def run_pipeline(config: KaraokeConfig) -> None:
         total = len(STEPS)
         interrupted = False
 
-        # Обработка Ctrl+C
+        # Обработка Ctrl+C (первый раз — мягкое, второй — принудительное)
         original_handler = signal.getsignal(signal.SIGINT)
 
         def _handle_interrupt(signum, frame):
             nonlocal interrupted
+            if interrupted:
+                console.print("\n[bold red]Принудительное завершение.[/]")
+                signal.signal(signal.SIGINT, original_handler)
+                raise KeyboardInterrupt
             interrupted = True
-            console.print("\n[yellow]Прерывание... сохраняю прогресс.[/]")
+            console.print("\n[yellow]Прерывание... завершаю текущий шаг. Нажмите Ctrl+C ещё раз для принудительного выхода.[/]")
 
         signal.signal(signal.SIGINT, _handle_interrupt)
 
