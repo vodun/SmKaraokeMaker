@@ -50,6 +50,10 @@ class DemucsBackend:
 
     MODEL = "htdemucs_ft"
 
+    def __init__(self, shifts: int = 1, overlap: float = 0.25) -> None:
+        self.shifts = shifts
+        self.overlap = overlap
+
     def separate(self, audio_path: Path, output_dir: Path) -> tuple[Path, Path]:
         try:
             import torch
@@ -62,7 +66,10 @@ class DemucsBackend:
             )
 
         device = self._get_device()
-        logger.info("Demucs: модель=%s, устройство=%s", self.MODEL, device)
+        logger.info(
+            "Demucs: модель=%s, устройство=%s, shifts=%d, overlap=%.2f",
+            self.MODEL, device, self.shifts, self.overlap,
+        )
 
         # Загрузка модели
         model = get_model(self.MODEL)
@@ -78,8 +85,13 @@ class DemucsBackend:
         wav = (wav - ref.mean()) / ref.std()
         wav = wav.to(device)
 
-        # Сепарация
-        sources = apply_model(model, wav[None], device=device, progress=True)[0]
+        # Сепарация с улучшенными параметрами:
+        # shifts > 1 — усреднение нескольких прогонов со сдвигом (лучше изоляция вокала)
+        # overlap — перекрытие сегментов (меньше артефактов на стыках)
+        sources = apply_model(
+            model, wav[None], device=device, progress=True,
+            shifts=self.shifts, overlap=self.overlap,
+        )[0]
 
         # Денормализация
         sources = sources * ref.std() + ref.mean()
@@ -124,17 +136,30 @@ class SpleeterBackend:
         )
 
 
-def get_separator(name: str) -> SeparatorBackend:
-    """Фабрика для получения бэкенда сепарации."""
-    backends = {
-        "demucs": DemucsBackend,
-        "spleeter": SpleeterBackend,
+def get_separator(name: str, quality: str = "high") -> SeparatorBackend:
+    """Фабрика для получения бэкенда сепарации.
+
+    Параметры качества для Demucs:
+      draft:  shifts=0, overlap=0.25  — быстро, базовое качество
+      high:   shifts=1, overlap=0.25  — хороший баланс скорость/качество
+      ultra:  shifts=5, overlap=0.5   — максимальное качество изоляции вокала
+    """
+    quality_params = {
+        "draft": {"shifts": 0, "overlap": 0.25},
+        "high": {"shifts": 1, "overlap": 0.25},
+        "ultra": {"shifts": 5, "overlap": 0.5},
     }
-    cls = backends.get(name)
-    if cls is None:
+    params = quality_params.get(quality, quality_params["high"])
+
+    backends = {
+        "demucs": lambda: DemucsBackend(**params),
+        "spleeter": lambda: SpleeterBackend(),
+    }
+    factory = backends.get(name)
+    if factory is None:
         available = ", ".join(backends.keys())
         raise ValueError(f"Неизвестный сепаратор '{name}'. Доступные: {available}")
-    return cls()
+    return factory()
 
 
 def separate_vocals(ctx: PipelineContext) -> PipelineContext:
@@ -142,7 +167,7 @@ def separate_vocals(ctx: PipelineContext) -> PipelineContext:
     if ctx.audio_path is None:
         raise RuntimeError("Аудиофайл не найден. Сначала выполните извлечение аудио.")
 
-    backend = get_separator(ctx.config.separator)
+    backend = get_separator(ctx.config.separator, ctx.config.quality.value)
     vocals_path, instrumental_path = backend.separate(ctx.audio_path, ctx.temp_dir)
 
     ctx.vocals_path = vocals_path
