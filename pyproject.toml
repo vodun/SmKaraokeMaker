@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smkaraokemaker"
+version = "0.1.0"
+description = "CLI tool to convert music videos into karaoke videos"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.9",
+    "rich>=13.0",
+    "pydantic>=2.0",
+    "ffmpeg-python>=0.2",
+    "Pillow>=10.0",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+ml = [
+    "torch>=2.1",
+    "demucs>=4.0",
+    "faster-whisper>=1.0",
+]
+alignment = [
+    "stable-ts>=2.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+smkaraokemaker = "smkaraokemaker.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["smkaraokemaker*"]
+
+[tool.setuptools.package-data]
+smkaraokemaker = ["assets/fonts/*.ttf"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
