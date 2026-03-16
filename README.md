@@ -1,181 +1,189 @@
+🌍 *English | [Русский](README.ru.md)*
+
 # SMKaraokeMaker
 
-**Генератор караоке-видео из музыкальных клипов**
+**Karaoke video generator from music clips**
 
-CLI-приложение для macOS, которое принимает на вход музыкальное видео и автоматически превращает его в караоке: отделяет вокал от инструментала, распознаёт текст песни с точными таймингами по словам, накладывает синхронизированные субтитры с подсветкой текущего слова и выдаёт готовый MP4-файл.
+A CLI application for macOS that takes a music video as input and automatically converts it into a karaoke video: separates vocals from instrumentals, recognizes lyrics with word-level timestamps, overlays synchronized subtitles with current word highlighting, and outputs a ready-to-use MP4 file.
 
 ```
-$ smkaraokemaker input.mp4 -o karaoke_output.mp4
+$ smkaraokemaker run input.mp4 -o karaoke_output.mp4
 
-Входной файл: input.mp4 (1920x1080, 222 сек, 30 fps)
+Input file: input.mp4 (1920x1080, 222 sec, 30 fps)
 
- [1/5] Извлечение аудио              ██████████ 100%  0:00:02
- [2/5] Разделение вокала и музыки     ██████████ 100%  0:03:12
- [3/5] Распознавание текста и таймингов██████████ 100%  0:01:45
- [4/5] Генерация караоке-субтитров    ██████████ 100%  0:00:01
- [5/5] Рендер финального видео        ██████████ 100%  0:01:08
+ [1/5] Extracting audio               ██████████ 100%  0:00:02
+ [2/5] Separating vocals and music     ██████████ 100%  0:03:12
+ [3/5] Recognizing text and timings    ██████████ 100%  0:01:45
+ [4/5] Generating karaoke subtitles    ██████████ 100%  0:00:01
+ [5/5] Rendering final video           ██████████ 100%  0:01:08
 
-✓ Готово: karaoke_output.mp4 (134 МБ, 3:42)
+✓ Done: karaoke_output.mp4 (134 MB, 3:42)
 ```
 
 ---
 
-## Возможности
+## Features
 
-- **Автоматическая сепарация вокала** — Demucs (htdemucs_ft) от Meta, лучшее качество разделения на рынке
-- **Распознавание текста с пословными таймингами** — faster-whisper (large-v3), поддержка 90+ языков
-- **Караоке-субтитры** — ASS-формат с тегами `\kf` для плавной заливки слов слева направо
-- **Кэширование** — при повторном запуске с тем же файлом выполненные шаги пропускаются
-- **Apple Silicon** — нативная поддержка MPS-ускорения (PyTorch) на M1/M2/M3/M4
-- **Гибкая настройка** — цвета, шрифт, позиция субтитров, профили качества
-- **Автоопределение языка** — или явное указание через `--lang`
+- **Automatic vocal separation** — Demucs (htdemucs_ft) by Meta, best-in-class source separation quality
+- **Word-level speech recognition** — faster-whisper (large-v3), supports 90+ languages
+- **Karaoke subtitles** — ASS format with `\kf` tags for smooth left-to-right word fill effect
+- **Caching** — completed steps are skipped on re-runs with the same input file
+- **Apple Silicon** — native MPS acceleration support (PyTorch) on M1/M2/M3/M4
+- **Highly customizable** — colors, fonts, subtitle position, quality profiles
+- **Auto language detection** — or explicit selection via `--lang`
 
 ---
 
-## Требования
+## Requirements
 
-| Компонент | Версия | Назначение |
-|-----------|--------|------------|
-| macOS | 12+ | Apple Silicon рекомендуется |
-| Python | 3.11+ | Среда выполнения |
-| FFmpeg | 6.0+ | Работа с аудио/видео, **с поддержкой libass** |
+| Component | Version | Purpose |
+|-----------|---------|---------|
+| macOS | 12+ | Apple Silicon recommended |
+| Python | 3.11+ | Runtime |
+| FFmpeg | 6.0+ | Audio/video processing, **with libass support** |
 
-### Установка FFmpeg с libass
+### Installing FFmpeg with libass
 
-Стандартный `brew install ffmpeg` **не включает** поддержку ASS-субтитров. Нужна версия из tap:
+The default `brew install ffmpeg` **does not include** ASS subtitle support. You need the version from a tap:
 
 ```bash
 brew tap homebrew-ffmpeg/ffmpeg
 brew install homebrew-ffmpeg/ffmpeg/ffmpeg
 ```
 
-Проверить поддержку:
+Verify support:
 
 ```bash
 ffmpeg -filters 2>/dev/null | grep ass
-# Должно показать: .. ass  V->V  Render ASS subtitles...
+# Should show: .. ass  V->V  Render ASS subtitles...
 ```
 
 ---
 
-## Установка
+## Installation
 
-### Из исходников
+### From source
 
 ```bash
-git clone https://github.com/user/smkaraokemaker.git
-cd smkaraokemaker
+git clone https://github.com/vodun/SmKaraokeMaker.git
+cd SmKaraokeMaker
 
-# Создать виртуальное окружение
+# Create virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Установить с ML-зависимостями
+# Install with ML dependencies
 pip install -e ".[ml]"
 
-# Или минимальная установка (без ML — для разработки/тестов)
+# Or minimal install (no ML — for development/testing)
 pip install -e ".[dev]"
 ```
 
-### Зависимости
+### Dependencies
 
-**Основные** (устанавливаются автоматически):
-- `typer` — CLI-интерфейс
-- `rich` — прогресс-бары и форматированный вывод
-- `pydantic` — валидация данных
-- `ffmpeg-python` — обёртка FFmpeg
-- `Pillow` — работа с изображениями
-- `numpy` — массивы данных
+**Core** (installed automatically):
+- `typer` — CLI interface
+- `rich` — progress bars and formatted output
+- `pydantic` — data validation
+- `ffmpeg-python` — FFmpeg wrapper
+- `Pillow` — image processing
+- `numpy` — array operations
 
-**ML** (группа `[ml]`):
-- `torch` — ML-бэкенд (MPS на Apple Silicon)
-- `demucs` — сепарация вокала (Meta)
-- `faster-whisper` — распознавание речи (CTranslate2)
+**ML** (group `[ml]`):
+- `torch` — ML backend (MPS on Apple Silicon)
+- `demucs` — vocal separation (Meta)
+- `faster-whisper` — speech recognition (CTranslate2)
 
 ---
 
-## Использование
+## Usage
 
-### Базовый вызов
+### Basic usage
 
 ```bash
-smkaraokemaker video.mp4
-# Результат: video_karaoke.mp4
+smkaraokemaker run video.mp4
+# Output: video_karaoke.mp4
 ```
 
-### С указанием выхода и языка
+### Specify output and language
 
 ```bash
-smkaraokemaker video.mp4 -o karaoke.mp4 --lang ru
+smkaraokemaker run video.mp4 -o karaoke.mp4 --lang en
 ```
 
-### Быстрый черновик (для превью)
+### Quick draft (for preview)
 
 ```bash
-smkaraokemaker video.mp4 --quality draft
+smkaraokemaker run video.mp4 --quality draft
 ```
 
-### Кастомные цвета
+### Custom colors
 
 ```bash
-smkaraokemaker video.mp4 \
+smkaraokemaker run video.mp4 \
   --color-active "#FF4444" \
   --color-inactive "#CCCCCC" \
   --color-done "#666666"
 ```
 
-### Свой шрифт и размер
+### Custom font and size
 
 ```bash
-smkaraokemaker video.mp4 --font /path/to/MyFont.ttf --font-size 64
+smkaraokemaker run video.mp4 --font /path/to/MyFont.ttf --font-size 64
 ```
 
-### Подробный вывод (отладка)
+### Verbose output (debugging)
 
 ```bash
-smkaraokemaker video.mp4 -v --keep-temp
+smkaraokemaker run video.mp4 -v --keep-temp
+```
+
+### Check dependencies
+
+```bash
+smkaraokemaker check
 ```
 
 ---
 
-## Флаги и опции
+## Flags and Options
 
-| Флаг | Тип | По умолчанию | Описание |
-|------|-----|-------------|----------|
-| `INPUT_VIDEO` | path | — | Путь к исходному видеофайлу (обязательный) |
-| `-o, --output` | path | `<input>_karaoke.mp4` | Путь к выходному файлу |
-| `--lang` | str | `auto` | Язык распознавания ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) |
-| `--model` | str | `large-v3` | Модель Whisper: `tiny`, `base`, `small`, `medium`, `large-v3` |
-| `--font` | path | NotoSans-Bold | Путь к .ttf-шрифту |
-| `--font-size` | int | `48` | Размер шрифта (px) |
-| `--color-active` | str | `#FFD700` | Цвет текущего слова (золотой) |
-| `--color-inactive` | str | `#FFFFFF` | Цвет ещё не спетых слов (белый) |
-| `--color-done` | str | `#AAAAAA` | Цвет уже спетых слов (серый) |
-| `--position` | str | `bottom` | Позиция: `top`, `center`, `bottom` |
-| `--separator` | str | `demucs` | Движок сепарации: `demucs` |
-| `--lyrics` | path | — | Готовый текст песни (.txt / .lrc) для forced alignment |
-| `--keep-temp` | flag | `false` | Сохранить промежуточные файлы |
-| `--quality` | str | `high` | Профиль: `draft`, `high`, `ultra` |
-| `-v, --verbose` | flag | `false` | Подробный лог |
-| `--version` | flag | — | Показать версию |
-
----
-
-## Профили качества
-
-| Профиль | Пресет FFmpeg | CRF | Аудио | Скорость | Применение |
-|---------|-------------|-----|-------|----------|------------|
-| `draft` | ultrafast | 28 | 128k AAC | Быстро | Превью, проверка таймингов |
-| `high` | medium | 18 | 192k AAC | Средне | Основной режим |
-| `ultra` | slow | 14 | 320k AAC | Медленно | Максимальное качество |
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `INPUT_VIDEO` | path | — | Path to input video file (required) |
+| `-o, --output` | path | `<input>_karaoke.mp4` | Output file path |
+| `--lang` | str | `auto` | Recognition language ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) |
+| `--model` | str | `large-v3` | Whisper model: `tiny`, `base`, `small`, `medium`, `large-v3` |
+| `--font` | path | NotoSans-Bold | Path to .ttf font |
+| `--font-size` | int | `48` | Font size (px) |
+| `--color-active` | str | `#FFD700` | Current word color (gold) |
+| `--color-inactive` | str | `#FFFFFF` | Upcoming words color (white) |
+| `--color-done` | str | `#AAAAAA` | Sung words color (gray) |
+| `--position` | str | `bottom` | Position: `top`, `center`, `bottom` |
+| `--separator` | str | `demucs` | Separation engine: `demucs` |
+| `--lyrics` | path | — | Pre-existing lyrics (.txt / .lrc) for forced alignment |
+| `--keep-temp` | flag | `false` | Keep intermediate files |
+| `--quality` | str | `high` | Profile: `draft`, `high`, `ultra` |
+| `-v, --verbose` | flag | `false` | Verbose logging |
+| `--version` | flag | — | Show version |
 
 ---
 
-## Как это работает
+## Quality Profiles
 
-### Архитектура
+| Profile | FFmpeg Preset | CRF | Audio | Speed | Use case |
+|---------|--------------|-----|-------|-------|----------|
+| `draft` | ultrafast | 28 | 128k AAC | Fast | Preview, timing check |
+| `high` | medium | 18 | 192k AAC | Medium | Default mode |
+| `ultra` | slow | 14 | 320k AAC | Slow | Maximum quality |
 
-Линейный пайплайн из 5 модулей — каждый получает результат предыдущего:
+---
+
+## How It Works
+
+### Architecture
+
+A linear pipeline of 5 modules — each receives the output of the previous one:
 
 ```
 input.mp4
@@ -187,92 +195,92 @@ input.mp4
 [2. Vocal Separator]     Demucs htdemucs_ft → vocals.wav + instrumental.wav
     │
     ▼
-[3. Speech Recognizer]   faster-whisper → слова + тайминги (word-level)
+[3. Speech Recognizer]   faster-whisper → words + timestamps (word-level)
     │
     ▼
-[4. Subtitle Renderer]   Генерация ASS с тегами \kf (караоке-заливка)
+[4. Subtitle Renderer]   ASS generation with \kf tags (karaoke fill effect)
     │
     ▼
-[5. Video Composer]      FFmpeg: видео + инструментал + субтитры → MP4
+[5. Video Composer]      FFmpeg: video + instrumental + subtitles → MP4
     │
     ▼
 karaoke_output.mp4
 ```
 
-### Караоке-эффект
+### Karaoke Effect
 
-Субтитры используют формат ASS (Advanced SubStation Alpha) с тегами `\kf` — плавная заливка каждого слова слева направо синхронно с пением:
+Subtitles use the ASS (Advanced SubStation Alpha) format with `\kf` tags — smooth left-to-right fill of each word synchronized with singing:
 
 ```ass
-Dialogue: 0,0:01:05.00,0:01:10.00,Karaoke,,0,0,0,,{\kf50}Я {\kf30}помню {\kf40}чудное {\kf60}мгновенье
+Dialogue: 0,0:01:05.00,0:01:10.00,Karaoke,,0,0,0,,{\kf50}Never {\kf30}gonna {\kf40}give {\kf60}you {\kf30}up
 ```
 
-Цвета:
-- **Золотой** (`#FFD700`) — слово поётся прямо сейчас (заливка)
-- **Белый** (`#FFFFFF`) — слова впереди
-- **Серый** (`#AAAAAA`) — уже спетые слова
+Colors:
+- **Gold** (`#FFD700`) — word being sung right now (fill effect)
+- **White** (`#FFFFFF`) — upcoming words
+- **Gray** (`#AAAAAA`) — already sung words
 
-### Кэширование
+### Caching
 
-При повторном запуске с тем же файлом SMKaraokeMaker автоматически пропускает уже выполненные шаги:
+On re-runs with the same file, SMKaraokeMaker automatically skips completed steps:
 
 ```
-$ smkaraokemaker video.mp4 -o karaoke.mp4
+$ smkaraokemaker run video.mp4 -o karaoke.mp4
 
- [1/5] Извлечение аудио (кэш)         ██████████ 100%
- [2/5] Разделение вокала и музыки (кэш)██████████ 100%
- [3/5] Распознавание текста (кэш)      ██████████ 100%
- [4/5] Генерация субтитров (кэш)       ██████████ 100%
- [5/5] Рендер финального видео         ██████████ 100%  0:01:08
+ [1/5] Extracting audio (cache)        ██████████ 100%
+ [2/5] Separating vocals (cache)       ██████████ 100%
+ [3/5] Recognizing text (cache)        ██████████ 100%
+ [4/5] Generating subtitles (cache)    ██████████ 100%
+ [5/5] Rendering final video           ██████████ 100%  0:01:08
 ```
 
-Кэш хранится в `/tmp/smkaraokemaker_<hash>/` и привязан к SHA256-хэшу входного файла. Для принудительного перезапуска удалите temp-директорию или измените входной файл.
+Cache is stored in `/tmp/smkaraokemaker_<hash>/` and is tied to the SHA256 hash of the input file. To force a full re-run, delete the temp directory or modify the input file.
 
 ---
 
-## Оценка производительности
+## Performance Estimates
 
-Ориентировочное время обработки для видео **4 минуты**:
+Approximate processing time for a **4-minute** video:
 
-| Этап | Apple Silicon (M2) | CPU (Intel) |
+| Step | Apple Silicon (M2) | CPU (Intel) |
 |------|-------------------|-------------|
-| Извлечение аудио | 2 сек | 2 сек |
-| Сепарация (Demucs) | ~3 мин | ~8 мин |
-| Распознавание (Whisper large-v3) | ~2 мин | ~6 мин |
-| Генерация субтитров (ASS) | <1 сек | <1 сек |
-| Сборка видео | ~1 мин | ~2 мин |
-| **Итого** | **~6 мин** | **~16 мин** |
+| Audio extraction | 2 sec | 2 sec |
+| Separation (Demucs) | ~3 min | ~8 min |
+| Recognition (Whisper large-v3) | ~2 min | ~6 min |
+| Subtitle generation (ASS) | <1 sec | <1 sec |
+| Video composition | ~1 min | ~2 min |
+| **Total** | **~6 min** | **~16 min** |
 
-Для быстрого превью: `--quality draft --model small` сократит время в 3-4 раза.
+For quick preview: `--quality draft --model small` reduces processing time by 3-4x.
 
 ---
 
-## Структура проекта
+## Project Structure
 
 ```
-smkaraokemaker/
-├── pyproject.toml                 # Зависимости, entry point
+SmKaraokeMaker/
+├── pyproject.toml                 # Dependencies, entry point
 ├── smkaraokemaker/
-│   ├── __init__.py                # Версия пакета
+│   ├── __init__.py                # Package version
 │   ├── __main__.py                # python -m smkaraokemaker
-│   ├── cli.py                     # Typer CLI с 14 флагами
-│   ├── pipeline.py                # Оркестратор: прогресс, кэш, ошибки
+│   ├── cli.py                     # Typer CLI with 14 flags
+│   ├── pipeline.py                # Orchestrator: progress, cache, errors
 │   ├── config.py                  # KaraokeConfig, PipelineContext
 │   ├── models.py                  # Word, Segment, SubtitleStyle
 │   ├── modules/
 │   │   ├── audio_extractor.py     # FFmpeg → WAV
-│   │   ├── vocal_separator.py     # Demucs сепарация
-│   │   ├── speech_recognizer.py   # faster-whisper + группировка
-│   │   ├── subtitle_renderer.py   # ASS-генератор с \kf
-│   │   └── video_composer.py      # Финальная сборка
+│   │   ├── vocal_separator.py     # Demucs separation
+│   │   ├── speech_recognizer.py   # faster-whisper + grouping
+│   │   ├── subtitle_renderer.py   # ASS generator with \kf
+│   │   └── video_composer.py      # Final composition
 │   ├── utils/
-│   │   ├── ffmpeg_utils.py        # Обёртки FFmpeg/ffprobe
-│   │   ├── temp_manager.py        # Кэш, temp-файлы
-│   │   ├── validators.py          # Валидация входных данных
-│   │   └── fonts.py               # Встроенный шрифт
+│   │   ├── ffmpeg_utils.py        # FFmpeg/ffprobe wrappers
+│   │   ├── temp_manager.py        # Cache, temp files
+│   │   ├── validators.py          # Input validation
+│   │   └── fonts.py               # Bundled font
 │   └── assets/fonts/
-│       └── NotoSans-Bold.ttf      # Шрифт по умолчанию
-└── tests/                         # 41 тест
+│       └── NotoSans-Bold.ttf      # Default font
+└── tests/                         # 41 tests
     ├── test_models.py
     ├── test_audio_extractor.py
     ├── test_speech_recognizer.py
@@ -284,55 +292,55 @@ smkaraokemaker/
 
 ---
 
-## Разработка
+## Development
 
 ```bash
-# Установка dev-зависимостей
+# Install dev dependencies
 pip install -e ".[dev,ml]"
 
-# Запуск тестов
+# Run tests
 pytest tests/ -v
 
-# Запуск без ML (быстрые тесты)
+# Run without ML (fast tests)
 pytest tests/ -v -m "not slow"
 ```
 
-### Модели Whisper
+### Whisper Models
 
-| Модель | Размер | VRAM | Качество | Скорость |
-|--------|--------|------|----------|----------|
-| `tiny` | 39 МБ | ~1 ГБ | Низкое | Очень быстро |
-| `base` | 74 МБ | ~1 ГБ | Среднее | Быстро |
-| `small` | 244 МБ | ~2 ГБ | Хорошее | Средне |
-| `medium` | 769 МБ | ~5 ГБ | Отличное | Медленно |
-| `large-v3` | 1550 МБ | ~10 ГБ | Лучшее | Очень медленно |
+| Model | Size | VRAM | Quality | Speed |
+|-------|------|------|---------|-------|
+| `tiny` | 39 MB | ~1 GB | Low | Very fast |
+| `base` | 74 MB | ~1 GB | Medium | Fast |
+| `small` | 244 MB | ~2 GB | Good | Medium |
+| `medium` | 769 MB | ~5 GB | Excellent | Slow |
+| `large-v3` | 1550 MB | ~10 GB | Best | Very slow |
 
-Для тестирования рекомендуется `--model small` или `--model base`.
-
----
-
-## Поддерживаемые форматы
-
-**Входные видео:** `.mp4`, `.mkv`, `.avi`, `.mov`, `.webm`, `.m4v`
-
-**Выход:** `.mp4` (H.264 + AAC)
+For testing, `--model small` or `--model base` is recommended.
 
 ---
 
-## Обработка ошибок
+## Supported Formats
 
-| Ситуация | Поведение |
-|----------|----------|
-| Файл не найден | Сообщение + код выхода 1 |
-| Неподдерживаемый формат | Список поддерживаемых + код 1 |
-| FFmpeg не установлен | Инструкция `brew install` + код 1 |
-| Нет аудио в видео | Сообщение + код 1 |
-| Мало места на диске (<2 ГБ) | Предупреждение + код 1 |
-| Ctrl+C | Сохранение прогресса, подсказка для продолжения |
-| ML-модель не установлена | Инструкция `pip install smkaraokemaker[ml]` |
+**Input video:** `.mp4`, `.mkv`, `.avi`, `.mov`, `.webm`, `.m4v`
+
+**Output:** `.mp4` (H.264 + AAC)
 
 ---
 
-## Лицензия
+## Error Handling
+
+| Situation | Behavior |
+|-----------|----------|
+| File not found | Error message + exit code 1 |
+| Unsupported format | List of supported formats + exit code 1 |
+| FFmpeg not installed | Installation instructions + exit code 1 |
+| No audio in video | Error message + exit code 1 |
+| Low disk space (<2 GB) | Warning + exit code 1 |
+| Ctrl+C | Progress saved, hint to resume |
+| ML model not installed | Instructions `pip install smkaraokemaker[ml]` |
+
+---
+
+## License
 
 MIT
