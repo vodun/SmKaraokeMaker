@@ -54,6 +54,35 @@ class TestVideoComposer:
         assert info["has_audio"]
         assert info["duration"] > 0
 
+    def test_compose_audio_only(self, sample_video, tmp_path):
+        """Тест сборки видео из аудио-входа (чёрный фон)."""
+        from smkaraokemaker.modules.audio_extractor import extract_audio
+
+        config = KaraokeConfig(
+            input_video=sample_video,
+            output_video=tmp_path / "karaoke_audio.mp4",
+            quality=QualityProfile.DRAFT,
+            resolution="1280x720",
+        )
+        ctx = PipelineContext(
+            input_video=sample_video,
+            output_video=config.output_video,
+            temp_dir=tmp_path,
+            config=config,
+            has_video=False,  # Эмулируем аудио-вход
+        )
+        ctx = extract_audio(ctx)
+        ctx.instrumental_path = ctx.audio_path
+
+        result = compose_video(ctx)
+        assert result.output_video.exists()
+
+        info = probe_media(result.output_video)
+        assert info["has_video"]
+        assert info["has_audio"]
+        assert info["width"] == 1280
+        assert info["height"] == 720
+
     def test_missing_instrumental_raises(self, sample_video, tmp_path):
         config = KaraokeConfig(
             input_video=sample_video,

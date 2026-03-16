@@ -47,6 +47,7 @@ class KaraokeConfig:
     lyrics: Path | None = None
     keep_temp: bool = False
     quality: QualityProfile = QualityProfile.HIGH
+    resolution: str = "1280x720"
     verbose: bool = False
 
 
@@ -58,6 +59,8 @@ class PipelineContext:
     output_video: Path
     temp_dir: Path
     config: KaraokeConfig
+
+    has_video: bool = True  # False когда вход — аудиофайл
 
     # Заполняется по мере выполнения
     audio_path: Path | None = None

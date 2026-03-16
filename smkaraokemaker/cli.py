@@ -44,7 +44,7 @@ def callback(
 def run(
     input_video: Annotated[
         Path,
-        typer.Argument(help="Путь к исходному видеофайлу", exists=True),
+        typer.Argument(help="Путь к медиафайлу (видео или аудио)", exists=True),
     ],
     output: Annotated[
         Optional[Path],
@@ -98,13 +98,22 @@ def run(
         QualityProfile,
         typer.Option("--quality", help="Качество вывода: draft, high, ultra"),
     ] = QualityProfile.HIGH,
+    resolution: Annotated[
+        str,
+        typer.Option("--resolution", help="Разрешение видео для аудио-входа (WxH)"),
+    ] = "1280x720",
     verbose: Annotated[
         bool,
         typer.Option("-v", "--verbose", help="Подробный вывод"),
     ] = False,
 ) -> None:
-    """Конвертировать музыкальное видео в караоке."""
+    """Конвертировать медиафайл (видео или аудио) в караоке."""
+    from smkaraokemaker.utils.validators import is_audio_only_format
+
     output_path = output or input_video.with_stem(f"{input_video.stem}_karaoke")
+    # Для аудио-входа принудительно ставим .mp4
+    if is_audio_only_format(input_video) and output_path.suffix.lower() != ".mp4":
+        output_path = output_path.with_suffix(".mp4")
 
     config = KaraokeConfig(
         input_video=input_video,
@@ -121,6 +130,7 @@ def run(
         lyrics=lyrics,
         keep_temp=keep_temp,
         quality=quality,
+        resolution=resolution,
         verbose=verbose,
     )
 

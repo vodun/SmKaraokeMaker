@@ -60,15 +60,27 @@ def run_pipeline(config: KaraokeConfig) -> None:
     # Метаданные для информации
     info = probe_media(config.input_video)
     if not info["has_audio"]:
-        console.print("[bold red]Ошибка:[/] Видеофайл не содержит аудиодорожки")
+        console.print("[bold red]Ошибка:[/] Файл не содержит аудиодорожки")
         raise SystemExit(1)
 
+    has_video = info["has_video"]
     duration = info["duration"]
-    console.print(
-        f"[bold]Входной файл:[/] {config.input_video.name} "
-        f"({info['width']}x{info['height']}, "
-        f"{duration:.0f} сек, {info['fps']:.0f} fps)"
-    )
+
+    # Для видео-входа устанавливаем resolution из метаданных
+    if has_video:
+        config.resolution = f"{info['width']}x{info['height']}"
+
+    if has_video:
+        console.print(
+            f"[bold]Входной файл:[/] {config.input_video.name} "
+            f"({info['width']}x{info['height']}, "
+            f"{duration:.0f} сек, {info['fps']:.0f} fps)"
+        )
+    else:
+        console.print(
+            f"[bold]Входной файл:[/] {config.input_video.name} "
+            f"(аудио, {duration:.0f} сек) → видео {config.resolution}"
+        )
     console.print()
 
     with TempManager(config.input_video, keep_temp=config.keep_temp) as tm:
@@ -77,6 +89,7 @@ def run_pipeline(config: KaraokeConfig) -> None:
             output_video=config.output_video,
             temp_dir=tm.temp_dir,
             config=config,
+            has_video=has_video,
         )
 
         # Восстановление контекста из кэша

@@ -8,6 +8,7 @@ from smkaraokemaker.utils.validators import (
     validate_input_file,
     validate_ffmpeg_available,
     validate_disk_space,
+    is_audio_only_format,
 )
 
 
@@ -21,7 +22,7 @@ class TestValidateInputFile:
             validate_input_file(tmp_path)
 
     def test_unsupported_format(self, tmp_path):
-        f = tmp_path / "audio.mp3"
+        f = tmp_path / "data.xyz"
         f.write_bytes(b"fake")
         with pytest.raises(ValidationError, match="Неподдерживаемый формат"):
             validate_input_file(f)
@@ -40,6 +41,35 @@ class TestValidateInputFile:
         f = tmp_path / "video.MP4"
         f.write_bytes(b"fake")
         validate_input_file(f)
+
+    def test_valid_mp3(self, tmp_path):
+        f = tmp_path / "song.mp3"
+        f.write_bytes(b"fake mp3")
+        validate_input_file(f)
+
+    def test_valid_flac(self, tmp_path):
+        f = tmp_path / "song.flac"
+        f.write_bytes(b"fake flac")
+        validate_input_file(f)
+
+    def test_valid_wav(self, tmp_path):
+        f = tmp_path / "song.wav"
+        f.write_bytes(b"fake wav")
+        validate_input_file(f)
+
+
+class TestIsAudioOnlyFormat:
+    def test_mp3_is_audio(self):
+        assert is_audio_only_format(Path("song.mp3")) is True
+
+    def test_flac_is_audio(self):
+        assert is_audio_only_format(Path("song.flac")) is True
+
+    def test_mp4_is_not_audio(self):
+        assert is_audio_only_format(Path("video.mp4")) is False
+
+    def test_mkv_is_not_audio(self):
+        assert is_audio_only_format(Path("video.mkv")) is False
 
 
 class TestValidateFFmpeg:

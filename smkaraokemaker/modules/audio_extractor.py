@@ -1,4 +1,4 @@
-"""Извлечение аудиодорожки из видеофайла."""
+"""Извлечение аудиодорожки из медиафайла."""
 
 from __future__ import annotations
 
@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 
 def extract_audio(ctx: PipelineContext) -> PipelineContext:
-    """Извлечь аудио из видео в WAV (PCM 16-bit, 44100 Hz, stereo)."""
+    """Извлечь аудио из медиафайла в WAV (PCM 16-bit, 44100 Hz, stereo)."""
     output_path = ctx.temp_dir / "audio_full.wav"
 
     # Проверяем наличие аудиодорожки
     info = probe_media(ctx.input_video)
     if not info["has_audio"]:
-        raise FFmpegError(f"Видеофайл не содержит аудиодорожки: {ctx.input_video}")
+        raise FFmpegError(f"Файл не содержит аудиодорожки: {ctx.input_video}")
 
     run_ffmpeg(
         [

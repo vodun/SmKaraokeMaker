@@ -2,9 +2,9 @@
 
 # SMKaraokeMaker
 
-**Karaoke video generator from music clips**
+**Karaoke video generator from music clips and audio files**
 
-A CLI application for macOS that takes a music video as input and automatically converts it into a karaoke video: separates vocals from instrumentals, recognizes lyrics with word-level timestamps, overlays synchronized subtitles with current word highlighting, and outputs a ready-to-use MP4 file.
+A CLI application for macOS that takes a music video or audio file as input and automatically converts it into a karaoke video: separates vocals from instrumentals, recognizes lyrics with word-level timestamps, overlays synchronized subtitles with current word highlighting, and outputs a ready-to-use MP4 file. For audio-only input, a black background video is generated automatically.
 
 ```
 $ smkaraokemaker run input.mp4 -o karaoke_output.mp4
@@ -29,7 +29,8 @@ Input file: input.mp4 (1920x1080, 222 sec, 30 fps)
 - **Karaoke subtitles** — ASS format with `\kf` tags for smooth left-to-right word fill effect
 - **Caching** — completed steps are skipped on re-runs with the same input file
 - **Apple Silicon** — native MPS acceleration support (PyTorch) on M1/M2/M3/M4
-- **Highly customizable** — colors, fonts, subtitle position, quality profiles
+- **Audio file support** — accepts MP3, FLAC, WAV, OGG, M4A, AAC, WMA, Opus, AIFF — generates video with black background
+- **Highly customizable** — colors, fonts, subtitle position, quality profiles, video resolution
 - **Auto language detection** — or explicit selection via `--lang`
 
 ---
@@ -197,12 +198,12 @@ smkaraokemaker check
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `INPUT_VIDEO` | path | — | Path to input video file (required) |
+| `INPUT_FILE` | path | — | Path to input media file: video or audio (required) |
 | `-o, --output` | path | `<input>_karaoke.mp4` | Output file path |
 | `--lang` | str | `auto` | Recognition language ([ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)) |
 | `--model` | str | `large-v3` | Whisper model: `tiny`, `base`, `small`, `medium`, `large-v3` |
 | `--font` | path | NotoSans-Bold | Path to .ttf font |
-| `--font-size` | int | `48` | Font size (px) |
+| `--font-size` | int | `64` | Font size (px) |
 | `--color-active` | str | `#FFD700` | Current word color (gold) |
 | `--color-inactive` | str | `#FFFFFF` | Upcoming words color (white) |
 | `--color-done` | str | `#AAAAAA` | Sung words color (gray) |
@@ -211,6 +212,7 @@ smkaraokemaker check
 | `--lyrics` | path | — | Pre-existing lyrics (.txt / .lrc) for forced alignment |
 | `--keep-temp` | flag | `false` | Keep intermediate files |
 | `--quality` | str | `high` | Profile: `draft`, `high`, `ultra` |
+| `--resolution` | str | `1280x720` | Video resolution for audio-only input (e.g. `1920x1080`) |
 | `-v, --verbose` | flag | `false` | Verbose logging |
 | `--version` | flag | — | Show version |
 
@@ -328,7 +330,7 @@ SmKaraokeMaker/
 │   │   └── fonts.py               # Bundled font
 │   └── assets/fonts/
 │       └── NotoSans-Bold.ttf      # Default font
-└── tests/                         # 41 tests
+└── tests/                         # 49 tests
     ├── test_models.py
     ├── test_audio_extractor.py
     ├── test_speech_recognizer.py
@@ -370,6 +372,8 @@ For testing, `--model small` or `--model base` is recommended.
 ## Supported Formats
 
 **Input video:** `.mp4`, `.mkv`, `.avi`, `.mov`, `.webm`, `.m4v`
+
+**Input audio:** `.mp3`, `.wav`, `.flac`, `.ogg`, `.m4a`, `.aac`, `.wma`, `.opus`, `.aiff`
 
 **Output:** `.mp4` (H.264 + AAC)
 

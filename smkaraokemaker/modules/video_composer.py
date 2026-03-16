@@ -17,19 +17,39 @@ def compose_video(ctx: PipelineContext) -> PipelineContext:
 
     quality = ctx.config.quality
 
-    args = [
-        "-i", str(ctx.input_video),
-        "-i", str(ctx.instrumental_path),
-    ]
+    if ctx.has_video:
+        # Видео на входе: берём видеопоток из оригинала
+        args = [
+            "-i", str(ctx.input_video),
+            "-i", str(ctx.instrumental_path),
+        ]
 
-    # Видеофильтр: субтитры если есть
-    if ctx.subtitle_path and ctx.subtitle_path.exists():
-        # FFmpeg filter: используем опцию filename для корректного парсинга пути
-        args.extend(["-vf", f"ass=filename={ctx.subtitle_path}"])
+        if ctx.subtitle_path and ctx.subtitle_path.exists():
+            args.extend(["-vf", f"ass=filename={ctx.subtitle_path}"])
+
+        args.extend([
+            "-map", "0:v",
+            "-map", "1:a",
+        ])
+    else:
+        # Аудио на входе: генерируем чёрный фон
+        resolution = ctx.config.resolution
+        args = [
+            "-f", "lavfi",
+            "-i", f"color=c=black:s={resolution}:r=30",
+            "-i", str(ctx.instrumental_path),
+        ]
+
+        if ctx.subtitle_path and ctx.subtitle_path.exists():
+            args.extend(["-vf", f"ass=filename={ctx.subtitle_path}"])
+
+        args.extend([
+            "-map", "0:v",
+            "-map", "1:a",
+            "-shortest",
+        ])
 
     args.extend([
-        "-map", "0:v",
-        "-map", "1:a",
         "-c:v", "libx264",
         "-preset", quality.preset,
         "-crf", str(quality.crf),

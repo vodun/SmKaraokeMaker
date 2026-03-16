@@ -42,8 +42,12 @@ def render_subtitles(ctx: PipelineContext) -> PipelineContext:
         position=ctx.config.position,
     )
 
+    # Определяем разрешение для PlayRes в ASS
+    parts = ctx.config.resolution.split("x")
+    play_res = (int(parts[0]), int(parts[1]))
+
     ass_path = ctx.temp_dir / "karaoke.ass"
-    _generate_ass(ctx.transcript, style, ass_path)
+    _generate_ass(ctx.transcript, style, ass_path, play_res=play_res)
 
     ctx.subtitle_path = ass_path
     logger.info("ASS-субтитры: %d строк → %s", len(ctx.transcript), ass_path)
@@ -84,7 +88,12 @@ def _build_done_text(segment: Segment, done_color: str) -> str:
     return f"{{\\c{ass_color}}}{words}"
 
 
-def _generate_ass(segments: list[Segment], style: SubtitleStyle, output: Path) -> None:
+def _generate_ass(
+    segments: list[Segment],
+    style: SubtitleStyle,
+    output: Path,
+    play_res: tuple[int, int] = (1920, 1080),
+) -> None:
     """Генерация ASS-файла с двухстрочным караоке-отображением.
 
     Логика:
@@ -114,8 +123,8 @@ def _generate_ass(segments: list[Segment], style: SubtitleStyle, output: Path) -
         "ScriptType: v4.00+",
         "WrapStyle: 0",
         "ScaledBorderAndShadow: yes",
-        "PlayResX: 1920",
-        "PlayResY: 1080",
+        f"PlayResX: {play_res[0]}",
+        f"PlayResY: {play_res[1]}",
         "",
         "[V4+ Styles]",
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "

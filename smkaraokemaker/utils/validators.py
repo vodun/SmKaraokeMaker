@@ -6,7 +6,14 @@ import shutil
 from pathlib import Path
 
 
-SUPPORTED_FORMATS = {".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v"}
+SUPPORTED_VIDEO_FORMATS = {".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v"}
+SUPPORTED_AUDIO_FORMATS = {".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac", ".wma", ".opus", ".aiff"}
+SUPPORTED_FORMATS = SUPPORTED_VIDEO_FORMATS | SUPPORTED_AUDIO_FORMATS
+
+
+def is_audio_only_format(path: Path) -> bool:
+    """Проверить, является ли файл аудиоформатом (без видео)."""
+    return path.suffix.lower() in SUPPORTED_AUDIO_FORMATS
 
 
 class ValidationError(Exception):
@@ -23,7 +30,8 @@ def validate_input_file(path: Path) -> None:
         formats = ", ".join(sorted(SUPPORTED_FORMATS))
         raise ValidationError(
             f"Неподдерживаемый формат '{path.suffix}'. "
-            f"Поддерживаемые: {formats}"
+            f"Поддерживаемые видео: {', '.join(sorted(SUPPORTED_VIDEO_FORMATS))}; "
+            f"аудио: {', '.join(sorted(SUPPORTED_AUDIO_FORMATS))}"
         )
 
 
