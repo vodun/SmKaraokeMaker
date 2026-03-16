@@ -12,9 +12,10 @@ from smkaraokemaker.models import Word, Segment
 logger = logging.getLogger(__name__)
 
 # Word grouping parameters
-MAX_WORDS_PER_LINE = 8
-MIN_WORDS_PER_LINE = 3
+MAX_WORDS_PER_LINE = 6
+MIN_WORDS_PER_LINE = 2
 PAUSE_THRESHOLD = 0.5  # seconds — pause threshold for line break
+FORCE_BREAK_THRESHOLD = 2.0  # seconds — always break segment on gaps this large
 MIN_CONFIDENCE = 0.3
 
 
@@ -95,7 +96,8 @@ def _group_words_into_segments(words: list[Word]) -> list[Segment]:
             or len(current_words) >= MAX_WORDS_PER_LINE
         )
 
-        if should_break and len(current_words) >= MIN_WORDS_PER_LINE:
+        force_break = gap >= FORCE_BREAK_THRESHOLD
+        if should_break and (len(current_words) >= MIN_WORDS_PER_LINE or force_break):
             segments.append(_make_segment(current_words))
             current_words = [word]
         else:

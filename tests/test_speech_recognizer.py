@@ -43,5 +43,19 @@ class TestGroupWords:
         assert segments[0].start == 1.0
         assert segments[0].end == 2.5
 
+    def test_force_break_on_large_gap_with_single_word(self):
+        """Large gap (>= 2s) must force segment break even with only 1 word."""
+        words = _make_words([
+            (0.0, 0.5),        # word0 — alone in segment
+            (3.0, 3.5),        # word1 — after 2.5s gap, must start new segment
+            (3.6, 4.0),        # word2
+        ])
+        segments = _group_words_into_segments(words)
+        assert len(segments) == 2
+        assert len(segments[0].words) == 1
+        assert segments[0].end == 0.5
+        assert segments[1].words[0].text == "word1"
+        assert segments[1].start == 3.0
+
     def test_empty_list(self):
         assert _group_words_into_segments([]) == []

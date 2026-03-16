@@ -29,7 +29,7 @@ class SubtitleStyle(BaseModel):
     """Karaoke subtitle style parameters."""
 
     font_path: Path
-    font_size: int = 64
+    font_size: int = 48
     color_active: str = "#FFD700"
     color_inactive: str = "#FFFFFF"
     color_done: str = "#AAAAAA"
