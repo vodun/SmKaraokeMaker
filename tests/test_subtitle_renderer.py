@@ -104,8 +104,53 @@ class TestRenderSubtitles:
         result = render_subtitles(ctx)
         content = result.subtitle_path.read_text()
         dialogue_lines = [l for l in content.splitlines() if l.startswith("Dialogue:")]
-        # 2 сегмента: каждый даёт Line1, плюс первый даёт Line2 (preview следующего)
+        # 2 сегмента: seg0 → Line1 (active) + Line2 (preview), seg1 → Line2 (active)
         assert len(dialogue_lines) == 3
+        # Проверяем чередование стилей
+        assert ",Line1," in dialogue_lines[0]  # seg0 active
+        assert ",Line2," in dialogue_lines[1]  # seg1 preview
+        assert ",Line2," in dialogue_lines[2]  # seg1 active
+
+    def test_alternating_lines(self, tmp_path):
+        """Проверка чередования строк: чётные на Line1, нечётные на Line2."""
+        segments = [
+            Segment(
+                text=f"seg{i}",
+                words=[Word(text=f"word{i}", start=i * 5.0, end=i * 5.0 + 3.0)],
+                start=i * 5.0,
+                end=i * 5.0 + 3.0,
+            )
+            for i in range(4)
+        ]
+        config = KaraokeConfig(
+            input_video=Path("/fake/input.mp4"),
+            output_video=Path("/fake/output.mp4"),
+        )
+        ctx = PipelineContext(
+            input_video=config.input_video,
+            output_video=config.output_video,
+            temp_dir=tmp_path,
+            config=config,
+            transcript=segments,
+        )
+        result = render_subtitles(ctx)
+        content = result.subtitle_path.read_text()
+        dialogue_lines = [l for l in content.splitlines() if l.startswith("Dialogue:")]
+
+        # 4 сегмента: каждый даёт active + preview (кроме последнего — только active)
+        # seg0: Line1 active + Line2 preview = 2
+        # seg1: Line2 active + Line1 preview = 2
+        # seg2: Line1 active + Line2 preview = 2
+        # seg3: Line2 active = 1
+        assert len(dialogue_lines) == 7
+
+        # Проверяем чередование: active стили
+        active_styles = [l.split(",")[3] for l in dialogue_lines if "\\kf" in l]
+        assert active_styles == ["Line1", "Line2", "Line1", "Line2"]
+
+        # Проверяем preview стили
+        preview_styles = [l.split(",")[3] for l in dialogue_lines if "\\kf" not in l]
+        assert preview_styles == ["Line2", "Line1", "Line2"]
 
     def test_empty_transcript(self, tmp_path):
         config = KaraokeConfig(

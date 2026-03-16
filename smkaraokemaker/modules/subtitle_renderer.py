@@ -96,11 +96,12 @@ def _generate_ass(
 ) -> None:
     """Генерация ASS-файла с двухстрочным караоке-отображением.
 
-    Логика:
-    - Строка 1 (верхняя) — текущая активная строка с караоке-заливкой
-    - Строка 2 (нижняя) — следующая строка (предпросмотр, белым цветом)
-    - Когда строка 1 допета, строка 2 становится строкой 1 (активной),
-      а на строку 2 выводится следующий текст
+    Логика чередования строк:
+    - Чётные сегменты (0, 2, 4…) всегда на Line1 (верхняя строка)
+    - Нечётные сегменты (1, 3, 5…) всегда на Line2 (нижняя строка)
+    - Когда поётся активный сегмент, на другой строке показывается
+      превью следующего сегмента
+    - Текст никогда не перепрыгивает между строками
     """
     alignment = POSITION_ALIGNMENT.get(style.position, 2)
     font_name = style.font_path.stem
@@ -151,6 +152,14 @@ def _generate_ass(
     for i, segment in enumerate(segments):
         next_segment = segments[i + 1] if i + 1 < len(segments) else None
 
+        # Чередование: чётные сегменты → Line1, нечётные → Line2
+        if i % 2 == 0:
+            active_style = "Line1"
+            preview_style = "Line2"
+        else:
+            active_style = "Line2"
+            preview_style = "Line1"
+
         # Обратный отсчёт 3-2-1, если пауза перед сегментом > 5 сек
         gap = segment.start - prev_end
         if gap >= COUNTDOWN_THRESHOLD:
@@ -166,15 +175,15 @@ def _generate_ass(
         ass_start = _seconds_to_ass_time(segment.start)
         ass_end = _seconds_to_ass_time(segment.end)
 
-        # Строка 1 — текущая активная строка с караоке-заливкой
+        # Активная строка с караоке-заливкой
         karaoke_text = _build_karaoke_text(segment)
-        lines.append(f"Dialogue: 0,{ass_start},{ass_end},Line1,,0,0,0,,{karaoke_text}")
+        lines.append(f"Dialogue: 0,{ass_start},{ass_end},{active_style},,0,0,0,,{karaoke_text}")
 
-        # Строка 2 — предпросмотр следующей строки (показывается пока поётся текущая)
+        # Превью следующего сегмента на другой строке
         if next_segment:
             preview_text = " ".join(w.text for w in next_segment.words)
             lines.append(
-                f"Dialogue: 0,{ass_start},{ass_end},Line2,,0,0,0,,{preview_text}"
+                f"Dialogue: 0,{ass_start},{ass_end},{preview_style},,0,0,0,,{preview_text}"
             )
 
         prev_end = segment.end

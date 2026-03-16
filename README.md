@@ -26,7 +26,7 @@ Input file: input.mp4 (1920x1080, 222 sec, 30 fps)
 
 - **Automatic vocal separation** — Demucs (htdemucs_ft) by Meta, best-in-class source separation quality
 - **Word-level speech recognition** — faster-whisper (large-v3), supports 90+ languages
-- **Karaoke subtitles** — ASS format with `\kf` tags for smooth left-to-right word fill effect
+- **Karaoke subtitles** — ASS format with `\kf` tags for smooth left-to-right word fill effect, alternating two-line display (text stays in place, no jumping between lines)
 - **Caching** — completed steps are skipped on re-runs with the same input file
 - **Apple Silicon** — native MPS acceleration support (PyTorch) on M1/M2/M3/M4
 - **Audio file support** — accepts MP3, FLAC, WAV, OGG, M4A, AAC, WMA, Opus, AIFF — generates video with black background
@@ -258,10 +258,13 @@ karaoke_output.mp4
 
 ### Karaoke Effect
 
-Subtitles use the ASS (Advanced SubStation Alpha) format with `\kf` tags — smooth left-to-right fill of each word synchronized with singing:
+Subtitles use the ASS (Advanced SubStation Alpha) format with `\kf` tags — smooth left-to-right fill of each word synchronized with singing.
+
+Two lines are always displayed: even-numbered segments on the upper line, odd-numbered on the lower. While one line is being sung, the other shows the next segment as a preview. When singing moves to the next line, the previous line updates with new text — no jumping between lines.
 
 ```ass
-Dialogue: 0,0:01:05.00,0:01:10.00,Karaoke,,0,0,0,,{\kf50}Never {\kf30}gonna {\kf40}give {\kf60}you {\kf30}up
+Dialogue: 0,0:01:05.00,0:01:10.00,Line1,,0,0,0,,{\kf50}Never {\kf30}gonna {\kf40}give {\kf60}you {\kf30}up
+Dialogue: 0,0:01:05.00,0:01:10.00,Line2,,0,0,0,,Never gonna let you down
 ```
 
 Colors:
@@ -330,7 +333,7 @@ SmKaraokeMaker/
 │   │   └── fonts.py               # Bundled font
 │   └── assets/fonts/
 │       └── NotoSans-Bold.ttf      # Default font
-└── tests/                         # 49 tests
+└── tests/                         # 50 tests
     ├── test_models.py
     ├── test_audio_extractor.py
     ├── test_speech_recognizer.py
