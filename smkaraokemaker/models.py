@@ -29,12 +29,12 @@ class SubtitleStyle(BaseModel):
     """Параметры стиля караоке-субтитров."""
 
     font_path: Path
-    font_size: int = 48
+    font_size: int = 64
     color_active: str = "#FFD700"
     color_inactive: str = "#FFFFFF"
     color_done: str = "#AAAAAA"
     outline_color: str = "#000000"
-    outline_width: int = 2
+    outline_width: int = 3
     shadow_offset: tuple[int, int] = (2, 2)
     background_opacity: float = Field(default=0.0, ge=0.0, le=1.0)
     position: str = "bottom"  # top | center | bottom

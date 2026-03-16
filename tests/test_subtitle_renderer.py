@@ -104,7 +104,8 @@ class TestRenderSubtitles:
         result = render_subtitles(ctx)
         content = result.subtitle_path.read_text()
         dialogue_lines = [l for l in content.splitlines() if l.startswith("Dialogue:")]
-        assert len(dialogue_lines) == 2
+        # 2 сегмента: каждый даёт Line1, плюс первый даёт Line2 (preview следующего)
+        assert len(dialogue_lines) == 3
 
     def test_empty_transcript(self, tmp_path):
         config = KaraokeConfig(

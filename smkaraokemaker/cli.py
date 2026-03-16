@@ -65,7 +65,7 @@ def run(
     font_size: Annotated[
         int,
         typer.Option("--font-size", help="Размер шрифта в пикселях"),
-    ] = 48,
+    ] = 64,
     color_active: Annotated[
         str,
         typer.Option("--color-active", help="Цвет текущего слова (hex)"),

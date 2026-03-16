@@ -49,7 +49,7 @@ class TestSegment:
 class TestSubtitleStyle:
     def test_defaults(self):
         style = SubtitleStyle(font_path=Path("/tmp/font.ttf"))
-        assert style.font_size == 48
+        assert style.font_size == 64
         assert style.color_active == "#FFD700"
         assert style.color_inactive == "#FFFFFF"
         assert style.color_done == "#AAAAAA"

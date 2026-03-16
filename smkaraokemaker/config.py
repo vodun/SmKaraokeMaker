@@ -38,7 +38,7 @@ class KaraokeConfig:
     lang: str = "auto"
     model: str = "large-v3"
     font: Path | None = None
-    font_size: int = 48
+    font_size: int = 64
     color_active: str = "#FFD700"
     color_inactive: str = "#FFFFFF"
     color_done: str = "#AAAAAA"
