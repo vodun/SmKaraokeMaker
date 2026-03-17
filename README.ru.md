@@ -327,7 +327,7 @@ smkaraokemaker/
 │   │   └── fonts.py               # Встроенный шрифт
 │   └── assets/fonts/
 │       └── NotoSans-Bold.ttf      # Шрифт по умолчанию
-└── tests/                         # 50 тестов
+└── tests/                         # 53 тестов
     ├── test_models.py
     ├── test_audio_extractor.py
     ├── test_speech_recognizer.py

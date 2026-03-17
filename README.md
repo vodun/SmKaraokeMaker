@@ -333,7 +333,7 @@ SmKaraokeMaker/
 │   │   └── fonts.py               # Bundled font
 │   └── assets/fonts/
 │       └── NotoSans-Bold.ttf      # Default font
-└── tests/                         # 50 tests
+└── tests/                         # 53 tests
     ├── test_models.py
     ├── test_audio_extractor.py
     ├── test_speech_recognizer.py
