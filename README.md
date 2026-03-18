@@ -133,8 +133,6 @@ smkaraokemaker check
 - `typer` — CLI interface
 - `rich` — progress bars and formatted output
 - `pydantic` — data validation
-- `ffmpeg-python` — FFmpeg wrapper
-- `Pillow` — image processing
 - `numpy` — array operations
 
 **ML** (group `[ml]`):
@@ -209,7 +207,7 @@ smkaraokemaker check
 | `--color-done` | str | `#AAAAAA` | Sung words color (gray) |
 | `--position` | str | `bottom` | Position: `top`, `center`, `bottom` |
 | `--separator` | str | `demucs` | Separation engine: `demucs` |
-| `--lyrics` | path | — | Pre-existing lyrics (.txt / .lrc) for forced alignment |
+| `--lyrics` | path | — | Pre-existing lyrics (.txt / .lrc) *(planned, not yet implemented)* |
 | `--keep-temp` | flag | `false` | Keep intermediate files |
 | `--quality` | str | `high` | Profile: `draft`, `high`, `ultra` |
 | `--resolution` | str | `1280x720` | Video resolution for audio-only input (e.g. `1920x1080`) |
@@ -391,7 +389,7 @@ For testing, `--model small` or `--model base` is recommended.
 | FFmpeg not installed | Installation instructions + exit code 1 |
 | No audio in video | Error message + exit code 1 |
 | Low disk space (<2 GB) | Warning + exit code 1 |
-| Ctrl+C | Progress saved, hint to resume |
+| Ctrl+C | Graceful shutdown, temp files cleaned |
 | ML model not installed | Instructions `pip install smkaraokemaker[ml]` |
 
 ---

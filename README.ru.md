@@ -133,8 +133,6 @@ smkaraokemaker check
 - `typer` — CLI-интерфейс
 - `rich` — прогресс-бары и форматированный вывод
 - `pydantic` — валидация данных
-- `ffmpeg-python` — обёртка FFmpeg
-- `Pillow` — работа с изображениями
 - `numpy` — массивы данных
 
 **ML** (группа `[ml]`):
@@ -203,7 +201,7 @@ smkaraokemaker run video.mp4 -v --keep-temp
 | `--color-done` | str | `#AAAAAA` | Цвет уже спетых слов (серый) |
 | `--position` | str | `bottom` | Позиция: `top`, `center`, `bottom` |
 | `--separator` | str | `demucs` | Движок сепарации: `demucs` |
-| `--lyrics` | path | — | Готовый текст песни (.txt / .lrc) для forced alignment |
+| `--lyrics` | path | — | Готовый текст песни (.txt / .lrc) *(планируется, ещё не реализовано)* |
 | `--keep-temp` | flag | `false` | Сохранить промежуточные файлы |
 | `--quality` | str | `high` | Профиль: `draft`, `high`, `ultra` |
 | `--resolution` | str | `1280x720` | Разрешение видео для аудио-входа (напр. `1920x1080`) |
@@ -385,7 +383,7 @@ pytest tests/ -v -m "not slow"
 | FFmpeg не установлен | Инструкция `brew install` + код 1 |
 | Нет аудио в видео | Сообщение + код 1 |
 | Мало места на диске (<2 ГБ) | Предупреждение + код 1 |
-| Ctrl+C | Сохранение прогресса, подсказка для продолжения |
+| Ctrl+C | Корректное завершение, очистка temp-файлов |
 | ML-модель не установлена | Инструкция `pip install smkaraokemaker[ml]` |
 
 ---
